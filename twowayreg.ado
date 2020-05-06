@@ -43,7 +43,8 @@ real matrix sparse(real matrix x)
  
  real matrix readMat(string s,string n)
  {
-
+  real matrix X
+  real scalar fh
 fh = fopen(s+"_"+n, "r")
 X = fgetmatrix(fh)
 fclose(fh)
@@ -52,7 +53,7 @@ return(X)
  
  void saveMat(string s,string n,real matrix X)
  {
-
+  real scalar fh
 fh = fopen(s + "_" + n, "rw")
 fputmatrix(fh, X)
 fclose(fh)
@@ -93,7 +94,7 @@ void projDummies()
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
 real scalar N, T
-string scalar id, t, w,sampleVarName
+string scalar id, t, w,sampleVarName, root
 D=.
 //printf("Hola Paulo, todo functiona hasta aqui.")
 
@@ -206,7 +207,7 @@ void projVar()
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
 	real colvector invHH,invDD,Dy,Ty
 	real scalar N,T
-	string scalar id, t, currvar,newvar,sampleVarName,w
+	string scalar id, t, currvar,newvar,sampleVarName,w, root
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
 	id=st_strscalar("twoWayid")
@@ -300,7 +301,7 @@ foreach currvar of varlist `varlist' {
 	local newvar="`currvar'"
 	}
 	else {
-	gen `newvar'=.
+	qui gen `newvar'=.
 	}
 	//di "`currvar'"
 	//di "`newvar'"
