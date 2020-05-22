@@ -1,5 +1,6 @@
 capture program drop twowayset
 capture mata mata drop sparse()
+capture mata mata drop dofadj()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
 capture mata mata drop diagminus()
@@ -40,7 +41,7 @@ real matrix sparse(real matrix x)
  
   return(y)
  }
- 
+
  real matrix readMat(string s,string n)
  {
   real matrix X
@@ -50,6 +51,16 @@ X = fgetmatrix(fh)
 fclose(fh)
 return(X)
  }
+
+ real matrix dofadj(string root, real dof)
+ {
+  real scalar adj, T, N
+  N=readMat(root,"twoWayN1")
+  T=readMat(root,"twoWayN2")
+  adj = sqrt(dof/(dof - N - T + 1))
+  return(adj)
+ }
+ 
  
  void saveMat(string s,string n,real matrix X)
  {
@@ -88,6 +99,7 @@ fclose(fh)
  
   return(-A)
  }
+
 
 void projDummies()
 {
@@ -362,4 +374,18 @@ foreach currvar of varlist `varlist' {
 //obs(`nobs') dof(`dof')
 
 end
- 
+
+capture program drop dofadj
+program define dofadj, rclass
+version 11
+syntax ,[Root(name)]
+local dof = `e(df_r)'
+if ("`root'" == "") {
+	local root="last"
+	}
+mata dofadj("`root'",`dof')
+mata st_local("dofadj", strofreal(dofadj("`root'",`dof')))
+return scalar dofadj = `dofadj'
+end
+
+
