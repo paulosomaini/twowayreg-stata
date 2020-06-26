@@ -5,7 +5,7 @@ capture program drop twowaysample
 
 program define twowaysample, sortpreserve
 version 11
-syntax varlist(min=2 max=3) [if] [in], Generate(name) [REPlace]
+syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace]
 
 gettoken iid aux: varlist
 gettoken tid w: aux

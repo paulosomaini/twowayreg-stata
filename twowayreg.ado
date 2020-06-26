@@ -7,7 +7,7 @@ capture mata mata drop projDummies()
 
 //Mata programs:
 
-mata: mata set matastrict on
+
 mata:
 real matrix sparse(real matrix x)
  {
@@ -75,19 +75,19 @@ void projDummies()
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
 real scalar N, T
-string scalar id, t, w,sampleVarName
+string scalar newid,newt,w,sampleVarName
 D=.
 
-id = st_local("twoway_id")
-t = st_local("twoway_t")
+newid=st_matrix("twoWaynewid")
+newt=st_matrix("twoWaynewt")
 w = st_local("twoway_w")
 sampleVarName = st_local("twoway_sample")
 if (w==""){
-D = st_data(.,(id,t),sampleVarName)
+D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
 D = (D,J(rows(D),1,1))
 }
 else {
-D = st_data(.,(id,t,w),sampleVarName)
+D = st_data(.,("twoWaynewid","twoWaynewt",w),sampleVarName)
 }
 
 DH1=sparse(D)
@@ -144,18 +144,22 @@ syntax varlist(min=2 max=3) [if] [in]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 
+egen twoWaynewid= group(`twoway_id')
+egen twoWaynewt= group(`twoway_t')
+local newvars twoWaynewid twoWaynewt
+
 tempvar twoway_sample
 mark `twoway_sample' `if' `in'
-markout `twoway_sample' `varlist'
+markout `twoway_sample' `newvars'
+
 mata projDummies()
 //di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
-scalar twoWayid="`twoway_id'"
-scalar twoWayt="`twoway_t'"
 scalar twoWayw="`twoway_w'"
 scalar twoWayif="`if'"
 scalar twoWayin="`in'"
+
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
@@ -164,31 +168,32 @@ end
 capture program drop projvar
 capture mata mata drop projVar()
 
+
 mata
 void projVar()
 {
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
 	real colvector invHH,invDD,Dy,Ty
 	real scalar N,T
-	string scalar id, t, currvar,newvar,sampleVarName,w
+	string scalar newid, newt, currvar,newvar,sampleVarName,w
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
-	id=st_strscalar("twoWayid")
+	newid=st_local("newid")
 	N=st_numscalar("r(H)")
 	T=st_numscalar("r(T)")
 	//D=readMat(root,"twoWayD")
 	w=st_strscalar("twoWayw")
-	t=st_strscalar("twoWayt")
+	newt=st_local("newt")
 	sampleVarName = st_local("twoway_sample")
-	V = st_data(.,(id,t,currvar),sampleVarName)
+	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
 	if (w==""){
-	D = st_data(.,(id,t),sampleVarName)
+	D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
 	D = (D,J(rows(D),1,1))
 	}
 	else {
-	D = st_data(.,(id,t,w),sampleVarName)
+	D = st_data(.,("twoWaynewid","twoWaynewt",w),sampleVarName)
 	}
 	
 	V[.,3]=V[.,3]:*D[.,3]
@@ -238,6 +243,7 @@ void projVar()
 end
 
 
+
 program define projvar, nclass
 version 11
 syntax varlist, [Prefix(name)] [REPLACE]
@@ -251,6 +257,7 @@ markout `twoway_sample' `varlist'
 //summ `twoway_sample'
 // I need to make it robust to non 1,2,3... ids.
 
+
 foreach currvar of varlist `varlist' {
 	local newvar="`prefix'`currvar'"
 	if ("`replace'" != "") {
@@ -263,4 +270,6 @@ foreach currvar of varlist `varlist' {
 	//di "`newvar'"
 	mata projVar()
 }
+drop twoWaynewid
+drop twoWaynewt
 end
