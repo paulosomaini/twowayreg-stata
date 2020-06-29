@@ -1,4 +1,5 @@
 capture program drop twowayset
+capture program drop twowaysample
 capture mata mata drop sparse()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
@@ -152,6 +153,8 @@ tempvar twoway_sample
 mark `twoway_sample' `if' `in'
 markout `twoway_sample' `newvars'
 
+
+
 mata projDummies()
 //di in gr "Checkpoint 1"
 //ret li
@@ -163,7 +166,50 @@ scalar twoWayin="`in'"
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
+
+
 end
+
+
+program define twowaysample, sortpreserve
+version 11
+syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace]
+
+gettoken twoWaynewid aux: varlist
+gettoken twoWaynewt w: aux
+
+
+qui{
+if ("`replace'"=="replace") {
+	cap drop `generate'
+}
+
+if !("`w'"==""){
+	replace `w' = . if `w'<=0
+}
+
+
+mark `generate' `if' `in'
+markout `generate' `varlist'
+
+tempvar howmany
+count if `generate' == 1
+
+while `r(N)' {
+	bys `twoWaynewid': gen `howmany' = _N if `generate'
+	replace `generate' = 0 if `howmany' == 1
+	drop `howmany'
+
+	bys `twoWaynewt': gen `howmany' = _N if `generate'
+	replace `generate' = 0 if `howmany' == 1
+	
+	count if `howmany' == 1
+	drop `howmany'
+}
+}
+
+end
+
 
 capture program drop projvar
 capture mata mata drop projVar()

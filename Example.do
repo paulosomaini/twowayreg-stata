@@ -1,5 +1,6 @@
-
+clear all
 do twowayreg.ado
+
 *** 0) Preliminaries
 
 forvalues lo = 3/3 {
@@ -56,8 +57,9 @@ forvalues var = 1/`vars' {
 
 *** 2) Run Our procedure
 twowayset hid tid
+twowaysample hid tid, gen(sample)
 projvar y x*, p(w_)
-reg w_y w_x*, noc robust
+reg w_y w_x* if sample==1, noc robust
 drop w_*
 }
 }
