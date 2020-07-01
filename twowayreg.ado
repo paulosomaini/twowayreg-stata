@@ -197,8 +197,8 @@ invHH=HH:^-1
 
 N=colmax(D)[.,1]
 T=colmax(D)[.,2]
-st_numscalar("r(H)",N)
-st_numscalar("r(T)",T)
+st_numscalar("e(H)",N)
+st_numscalar("e(T)",T)
 st_matrix("e(invDD)",invDD)
 st_matrix("e(invHH)",invHH) 
 
@@ -209,7 +209,7 @@ if (N<T)
 		A=qrinv(diagminus(DD,CinvHHDH'*DH'))
 		//st_matrix("CinvHHDH",CinvHHDH)
         B=-A*CinvHHDH'
-		st_matrix("e(Cinv)",CinvHHDH)
+		st_matrix("e(CinvHHDH)",CinvHHDH)
 		st_matrix("e(A)",A)
 		st_matrix("e(B)",B)
 		
@@ -221,7 +221,7 @@ if (N<T)
 		C=qrinv(diagminus(HH,AinvDDDH'*DH))
 		//st_matrix("AinvDDDH",AinvDDDH)
         B=-AinvDDDH*C
-		st_matrix("e(Ainv)",AinvDDDH)
+		st_matrix("e(AinvDDDH)",AinvDDDH)
 		st_matrix("e(C)",C)
 		st_matrix("e(B)",B)
 
@@ -463,8 +463,8 @@ void projVar()
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
 	newid=st_local("newid")
-	N=st_numscalar("r(H)")
-	T=st_numscalar("r(T)")
+	N=st_numscalar("e(H)")
+	T=st_numscalar("e(T)")
 	//D=readMat(root,"twoWayD")
 	w=st_strscalar("twoWayw")
 	newt=st_local("newt")
@@ -500,7 +500,7 @@ void projVar()
 			
 			A=st_matrix("e(A)")
 			invHH=st_matrix("e(invHH)")
-			CinvHHDH=st_matrix("e(Cinv)")
+			CinvHHDH=st_matrix("e(CinvHHDH)")
 			//printf("b")
 			delta=A*Dy+B*Ty
 			tau=B'*(Dy-CinvHHDH'*Ty)+(invHH:*Ty) \0
@@ -510,7 +510,7 @@ void projVar()
 			//printf("1")
 			C=st_matrix("e(C)")
 			invDD=st_matrix("e(invDD)")
-			AinvDDDH=st_matrix("e(Ainv)")
+			AinvDDDH=st_matrix("e(AinvDDDH)")
 			delta=(invDD:*Dy)+B*(Ty-AinvDDDH'*Dy)
 			tau=B'*Dy+C*Ty \0 
 			//printf("c")
