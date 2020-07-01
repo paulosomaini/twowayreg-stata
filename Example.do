@@ -61,6 +61,13 @@ twowaysample hid tid, gen(sample)
 projvar y x*, p(w_)
 reg w_y w_x* if sample==1, noc robust
 drop w_*
+
+twowayset hid tid, save
+twowaysample hid tid, gen(sample2) save
+projvar y x*, p(w_) save
+reg w_y w_x* if sample2==1, noc robust
+drop w_*
+
 }
 }
 }
