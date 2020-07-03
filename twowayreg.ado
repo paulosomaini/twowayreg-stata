@@ -374,7 +374,6 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
-
 N=st_numscalar("N")
 T=st_numscalar("T")
 invDD=st_matrix("invDD")
@@ -446,6 +445,10 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
+newid=st_matrix("twoWaynewid")
+newt=st_matrix("twoWaynewt")
+w = st_local("twoway_w")
+sampleVarName = st_local("twoway_sample")
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
 invDD=readMat(root,"twoWayInvDD")
