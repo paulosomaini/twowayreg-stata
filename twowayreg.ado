@@ -1,7 +1,8 @@
 capture program drop twowayset
 capture program drop twowaysample
-capture mata mata drop sparse()
 capture mata mata drop dofadj()
+capture mata mata drop dofadj_l()
+capture mata mata drop sparse()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
 capture mata mata drop diagminus()
@@ -63,6 +64,24 @@ fputmatrix(fh, X)
 fclose(fh)
  }
  
+  real matrix dofadj(real dof)
+ {
+  real scalar adj, T, N
+  N=st_numscalar("N")
+  T=st_numscalar("T")
+ adj = sqrt(dof/(dof - N - T + 1))
+  return(adj)
+ }
+
+ 
+ real matrix dofadj_l(string root, real dof)
+ {
+  real scalar adj, T, N
+  N=readMat(root,"twoWayN1")
+  T=readMat(root,"twoWayN2")
+  adj = sqrt(dof/(dof - N - T + 1))
+  return(adj)
+ }
  
   real matrix proddiag(real matrix A,real colvector x)
  {
@@ -445,8 +464,6 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
-newid=st_matrix("twoWaynewid")
-newt=st_matrix("twoWaynewt")
 w = st_local("twoway_w")
 sampleVarName = st_local("twoway_sample")
 N=readMat(root,"twoWayN1")
@@ -515,4 +532,24 @@ gettoken twoway_t twoway_w: aux
 
 
 
+end
+
+capture program drop dofadj
+program define dofadj, rclass
+version 11
+syntax ,[Root(name)]
+local dof = `e(df_r)'
+mata dofadj(`dof')
+mata st_local("dofadj", strofreal(dofadj(`dof')))
+return scalar dofadj = `dofadj'
+end
+
+capture program drop dofadj_l
+program define dofadj_l, rclass
+version 11
+syntax ,[Root(name)]
+local dof = `e(df_r)'
+mata dofadj_l("`root'",`dof')
+mata st_local("dofadj", strofreal(dofadj_l("`root'",`dof')))
+return scalar dofadj = `dofadj'
 end
