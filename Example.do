@@ -1,5 +1,6 @@
-
+clear all
 do twowayreg.ado
+
 *** 0) Preliminaries
 
 forvalues lo = 3/3 {
@@ -56,10 +57,31 @@ forvalues var = 1/`vars' {
 
 *** 2) Run Our procedure
 twowayset hid tid
+twowaysample hid tid, gen(sample)
 projvar y x*, p(w_)
-reg w_y w_x*, noc robust
+reg w_y w_x* if sample==1, noc robust
+dofadj
+twowayreg w_y w_x* if sample==1, robust
+
 drop w_*
+
+twowaysave hid tid
 }
 }
 }
 }
+
+save Example2.dta,replace 
+
+clear all
+do twowayreg.ado
+use Example2.dta
+*** 2) Run Our procedure
+twowayload hid tid
+projvar y x*, p(w_)
+reg w_y w_x* if sample==1, noc robust
+dofadj_l
+twowayreg w_y w_x* if sample==1, robust
+
+drop w_*
+

@@ -1,4 +1,7 @@
 capture program drop twowayset
+capture program drop twowaysample
+capture mata mata drop dofadj()
+capture mata mata drop dofadj_l()
 capture mata mata drop sparse()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
@@ -6,7 +9,9 @@ capture mata mata drop diagminus()
 capture mata mata drop projDummies()
 capture mata mata drop saveMat()
 capture mata mata drop readMat()
+
 //Mata programs:
+
 
 mata:
 real matrix sparse(real matrix x)
@@ -22,9 +27,8 @@ real matrix sparse(real matrix x)
   return(y)
  }
  
- //sparse matrix function ends
- 
- 
+  //sparse matrix function ends
+
  // multiplying a diagonal matrix represented by a vector times a matrix.
  // Diag*A multiplies each rows.
  real matrix diagprod(real colvector x, real matrix A)
@@ -41,7 +45,7 @@ real matrix sparse(real matrix x)
   return(y)
  }
  
- real matrix readMat(string s,string n)
+  real matrix readMat(string s,string n)
  {
   real matrix X
   real scalar fh
@@ -51,6 +55,7 @@ fclose(fh)
 return(X)
  }
  
+  
  void saveMat(string s,string n,real matrix X)
  {
   real scalar fh
@@ -59,7 +64,24 @@ fputmatrix(fh, X)
 fclose(fh)
  }
  
-  
+  real matrix dofadj(real dof)
+ {
+  real scalar adj, T, N
+  N=st_numscalar("N")
+  T=st_numscalar("T")
+ adj = sqrt(dof/(dof - N - T + 1))
+  return(adj)
+ }
+
+ 
+ real matrix dofadj_l(string root, real dof)
+ {
+  real scalar adj, T, N
+  N=readMat(root,"twoWayN1")
+  T=readMat(root,"twoWayN2")
+  adj = sqrt(dof/(dof - N - T + 1))
+  return(adj)
+ }
  
   real matrix proddiag(real matrix A,real colvector x)
  {
@@ -88,64 +110,56 @@ fclose(fh)
  
   return(-A)
  }
-
-void projDummies()
+ 
+ 
+ 
+ void projDummies()
 {
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
 real scalar N, T
-string scalar id, t, w,sampleVarName, root
+string scalar newid,newt,w,sampleVarName
 D=.
-//printf("Hola Paulo, todo functiona hasta aqui.")
 
-id = st_local("twoway_id")
-t = st_local("twoway_t")
+newid=st_matrix("twoWaynewid")
+newt=st_matrix("twoWaynewt")
 w = st_local("twoway_w")
-root =st_local("root")
 sampleVarName = st_local("twoway_sample")
 if (w==""){
-D = st_data(.,(id,t),sampleVarName)
+D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
 D = (D,J(rows(D),1,1))
 }
 else {
-D = st_data(.,(id,t,w),sampleVarName)
+D = st_data(.,("twoWaynewid","twoWaynewt",w),sampleVarName)
 }
-//printf(sampleVarName)
-//printf("Incluso aca\n")
-//D[1..10,]
-//printf("y aca")
 
 DH1=sparse(D)
-//printf("Wohoo")
 DD=quadrowsum(DH1)
 HH=quadcolsum(DH1)'
 HH=HH[1..cols(DH1)-1]
 
-
-
 DH=DH1[.,1..cols(DH1)-1]
 
- 
 invDD=DD:^-1 
 invHH=HH:^-1
 
 N=colmax(D)[.,1]
 T=colmax(D)[.,2]
-saveMat(root,"twoWayN1", N)
-saveMat(root,"twoWayN2", T)
-saveMat(root,"twoWayinvDD", invDD)
-saveMat(root,"twoWayinvHH", invHH)
-//st_matrix("twoWayD", D...)
- if (N<T)
+st_numscalar("e(H)",N)
+st_numscalar("e(T)",T)
+st_matrix("e(invDD)",invDD)
+st_matrix("e(invHH)",invHH) 
+
+if (N<T)
 		{
         
         CinvHHDH=diagprod(invHH,DH')
 		A=qrinv(diagminus(DD,CinvHHDH'*DH'))
 		//st_matrix("CinvHHDH",CinvHHDH)
         B=-A*CinvHHDH'
-		saveMat(root,"twoWayCinvHHDH", CinvHHDH)
-		saveMat(root,"twoWayA", A)
-		saveMat(root,"twoWayB", B)
+		st_matrix("e(CinvHHDH)",CinvHHDH)
+		st_matrix("e(A)",A)
+		st_matrix("e(B)",B)
 		
 		
 		}
@@ -155,51 +169,99 @@ saveMat(root,"twoWayinvHH", invHH)
 		C=qrinv(diagminus(HH,AinvDDDH'*DH))
 		//st_matrix("AinvDDDH",AinvDDDH)
         B=-AinvDDDH*C
-		saveMat(root,"twoWayAinvDDDH", AinvDDDH)
-		saveMat(root,"twoWayC", C)
-		saveMat(root,"twoWayB", B)
+		st_matrix("e(AinvDDDH)",AinvDDDH)
+		st_matrix("e(C)",C)
+		st_matrix("e(B)",B)
+
 		
     }
  }
  
  end
 
-
-
+ 
 program define twowayset, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in], [Root(name)]
-//summ `varlist'
-// I need to make it robust to non 1,2,3... ids.
+syntax varlist(min=2 max=3) [if] [in]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
-if ("`root'" == "") {
-	local root="last"
-	}
+//summ `varlist'
+// I need to make it robust to non 1,2,3... ids.
 
-//di in gr "`twoway_id'"
-//di in gr "`twoway_t'"
 
-tempvar twoway_sample
-mark `twoway_sample' `if' `in'
-markout `twoway_sample' `varlist'
-mata projDummies()
+	egen twoWaynewid= group(`twoway_id')
+	egen twoWaynewt= group(`twoway_t')
+	local newvars twoWaynewid twoWaynewt
+
+	tempvar twoway_sample
+	mark `twoway_sample' `if' `in'
+	markout `twoway_sample' `newvars'
+
+
+
+	mata projDummies()
 //di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
-scalar twoWayid="`twoway_id'"
-scalar twoWayt="`twoway_t'"
-scalar twoWayw="`twoway_w'"
-scalar twoWayif="`if'"
-scalar twoWayin="`in'"
+	scalar twoWayw="`twoway_w'"
+	scalar twoWayif="`if'"
+	scalar twoWayin="`in'"
+
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
+
+
 end
- 
+
+
+program define twowaysample, sortpreserve
+version 11
+syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace] 
+
+
+
+gettoken twoWaynewid aux: varlist
+gettoken twoWaynewt w: aux
+
+
+qui{
+if ("`replace'"=="replace") {
+	cap drop `generate'
+}
+
+if !("`w'"==""){
+	replace `w' = . if `w'<=0
+}
+
+
+mark `generate' `if' `in'
+markout `generate' `varlist'
+
+tempvar howmany
+count if `generate' == 1
+
+while `r(N)' {
+	bys `twoWaynewid': gen `howmany' = _N if `generate'
+	replace `generate' = 0 if `howmany' == 1
+	drop `howmany'
+
+	bys `twoWaynewt': gen `howmany' = _N if `generate'
+	replace `generate' = 0 if `howmany' == 1
+	
+	count if `howmany' == 1
+	drop `howmany'
+}
+}
+	
+
+
+end
+
 
 capture program drop projvar
 capture mata mata drop projVar()
+
 
 mata
 void projVar()
@@ -207,26 +269,24 @@ void projVar()
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
 	real colvector invHH,invDD,Dy,Ty
 	real scalar N,T
-	string scalar id, t, currvar,newvar,sampleVarName,w, root
+	string scalar newid, newt, currvar,newvar,sampleVarName,w
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
-	id=st_strscalar("twoWayid")
-	root =st_local("root")
-	N=readMat(root,"twoWayN1")
-	T=readMat(root,"twoWayN2")
-	//D=readMat(root,"twoWayD")
+	newid=st_local("newid")
+	N=st_numscalar("e(H)")
+	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
-	t=st_strscalar("twoWayt")
+	newt=st_local("newt")
 	sampleVarName = st_local("twoway_sample")
-	V = st_data(.,(id,t,currvar),sampleVarName)
+	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
 	if (w==""){
-	D = st_data(.,(id,t),sampleVarName)
+	D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
 	D = (D,J(rows(D),1,1))
 	}
 	else {
-	D = st_data(.,(id,t,w),sampleVarName)
+	D = st_data(.,("twoWaynewid","twoWaynewt",w),sampleVarName)
 	}
 	
 	V[.,3]=V[.,3]:*D[.,3]
@@ -236,7 +296,7 @@ void projVar()
 	Dy=Dy
 	Ty=colsum(aux)
 	Ty=Ty[1,1..cols(aux)-1]'
-	B=readMat(root,"twoWayB")
+	B=st_matrix("e(B)")
 	
 	//rows(Ty)
     //cols(Ty)
@@ -247,9 +307,9 @@ void projVar()
 	 if (N<T)
 			{
 			
-			A=readMat(root,"twoWayA")
-			invHH=readMat(root,"twoWayinvHH")
-			CinvHHDH=readMat(root,"twoWayCinvHHDH")
+			A=st_matrix("e(A)")
+			invHH=st_matrix("e(invHH)")
+			CinvHHDH=st_matrix("e(CinvHHDH)")
 			//printf("b")
 			delta=A*Dy+B*Ty
 			tau=B'*(Dy-CinvHHDH'*Ty)+(invHH:*Ty) \0
@@ -257,9 +317,9 @@ void projVar()
 		else
 		{
 			//printf("1")
-			C=readMat(root,"twoWayC")
-			invDD=readMat(root,"twoWayinvDD")
-			AinvDDDH=readMat(root,"twoWayAinvDDDH")
+			C=st_matrix("e(C)")
+			invDD=st_matrix("e(invDD)")
+			AinvDDDH=st_matrix("e(AinvDDDH)")
 			delta=(invDD:*Dy)+B*(Ty-AinvDDDH'*Dy)
 			tau=B'*Dy+C*Ty \0 
 			//printf("c")
@@ -276,90 +336,261 @@ void projVar()
 end
 
 
+
 program define projvar, nclass
 version 11
-syntax varlist, [Prefix(name)] [Root(name)] [REPLACE]
-tempvar twoway_sample
-loc tif=twoWayif
-loc tin=twoWayin
-mark `twoway_sample' `tif' `tin'
-markout `twoway_sample' `varlist'
-//mata mata describe
-//summ `varlist'
-//summ `twoway_sample'
-// I need to make it robust to non 1,2,3... ids.
-if ("`prefix'" == "") {
-	local prefix="proj_"
-	}
-if ("`root'" == "") {
-	local root="last"
-	}
+syntax varlist, [Prefix(name)] [REPLACE] 
 
-foreach currvar of varlist `varlist' {
-	local newvar="`prefix'`currvar'"
-	if ("`replace'" != "") {
-	local newvar="`currvar'"
-	}
-	else {
-	qui gen `newvar'=.
-	}
-	//di "`currvar'"
-	//di "`newvar'"
-	mata projVar()
-	/*
-	mata
-	currvar = st_local("currvar")
-	newvar = st_local("newvar")
-	printf(".")
-	V = st_data(.,(id,t,currvar),sampleVarName)
-	varIn=V[.,3]
-	V[.,3]=V[.,3]:*D[.,3]
-	aux=sparse(V)
-	printf(".")
-	Dy=rowsum(aux)
-	Ty=colsum(aux)
-	Ty=Ty[1,1..cols(aux)-1]'
+	tempvar twoway_sample
+	loc tif=twoWayif
+	loc tin=twoWayin
+	mark `twoway_sample' `tif' `tin'
+	markout `twoway_sample' `varlist'
 
-	 if (N<T)
-			{
-			delta=A*Dy+B*Ty
-			tau=B'*(Dy-CinvHHDH'*Ty)+invHH*Ty \0
-			}
-		else
-		{
-			delta=(invDD:*Dy)+B*(Ty-AinvDDDH'*Dy)
-			tau=B'*Dy+C*Ty \0 
-			
+
+	foreach currvar of varlist `varlist' {
+		local newvar="`prefix'`currvar'"
+		if ("`replace'" != "") {
+		local newvar="`currvar'"
 		}
+		else {
+		qui gen `newvar'=.
+		}
+	mata projVar()
+	
+	}
 
-	//how to index
-	//varout=(var-delta(struc.hhid)-tau(struc.tid')).*sqrt(struc.w);
-	varOut=(varIn-delta[V[.,1]]-tau[V[.,2]]):*sqrt(D[.,3])
-	printf(".")
-	//st_matrix("DD2",B)
-	st_store(., newvar, varOut)
-	printf(".")
-	end
-	*/
+drop twoWaynewid
+drop twoWaynewt
+qui{
+	ereturn list
+}
+scalar N= e(H)
+scalar T= e(T)
+matrix invDD=e(invDD)
+matrix invHH=e(invHH)
+if (N<T){
+	matrix CinvHHDH=e(CinvHHDH)
+	matrix A= e(A)
+	matrix B=e(B)
+}
+else {
+	matrix AinvDDDH=e(AinvDDDH)
+	matrix C= e(C)
+	matrix B=e(B)
 }
 
+end
 
-//gettoken twoway_id aux: varlist
-//gettoken twoway_t twoway_w: aux
+capture program drop twowaysave
+capture mata mata drop projDummies_save()
 
-//di in gr "`twoway_id'"
-//di in gr "`twoway_t'"
+mata
+void projDummies_save()
+{
+real matrix D, CinvHHDH, AinvDDDH, A, B, C
+real colvector  invDD, invHH
+real scalar N, T
+string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
-//tempvar twoway_sample
-//mark `twoway_sample' `if' `in'
-//markout `twoway_sample' `varlist'
-//mata projDummies()
+N=st_numscalar("N")
+T=st_numscalar("T")
+invDD=st_matrix("invDD")
+invHH=st_matrix("invHH") 
+saveMat(root,"twoWayN1", N)
+saveMat(root,"twoWayN2", T)
+saveMat(root,"twoWayInvDD", invDD)
+saveMat(root,"twoWayInvHH", invHH)
+
+//st_matrix("twoWayD", D...)
+ if (N<T)
+		{
+        CinvHHDH=st_matrix("CinvHHDH")
+		A=st_matrix("A")
+		B=st_matrix("B")
+
+		saveMat(root,"twoWayCinvHHDH", CinvHHDH)
+		saveMat(root,"twoWayA", A)
+		saveMat(root,"twoWayB", B)
+		
+		
+		}
+    else
+	{
+        AinvDDDH=st_matrix("AinvDDDH")
+		C=st_matrix("C")
+		B=st_matrix("B")
+		saveMat(root,"twoWayAinvDDDH", AinvDDDH)
+		saveMat(root,"twoWayC", C)
+		saveMat(root,"twoWayB", B)
+		
+    }
+
+
+}
+
+end
+
+
+program define twowaysave, rclass
+version 11
+syntax varlist(min=2 max=3) [if] [in]
+gettoken twoway_id aux: varlist
+gettoken twoway_t twoway_w: aux
+	egen twoWaynewid= group(`twoway_id')
+	egen twoWaynewt= group(`twoway_t')
+
+	tempvar twoway_sample
+	mark `twoway_sample' `if' `in'
+	markout `twoway_sample' `varlist'
+	mata projDummies_save()
+	scalar twoWayid="`twoway_id'"
+	scalar twoWayt="`twoway_t'"
+	scalar twoWayw="`twoway_w'"
+	scalar twoWayif="`if'"
+	scalar twoWayin="`in'"
+drop twoWaynewid
+drop twoWaynewt
+end
+
+capture program drop twowayload
+capture mata mata drop projDummies_load()
+
+mata
+void projDummies_load()
+{
+real matrix D, CinvHHDH, AinvDDDH, A, B, C
+real colvector  invDD, invHH
+real scalar N, T
+string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
+
+w = st_local("twoway_w")
+sampleVarName = st_local("twoway_sample")
+N=readMat(root,"twoWayN1")
+T=readMat(root,"twoWayN2")
+invDD=readMat(root,"twoWayInvDD")
+invHH=readMat(root,"twoWayInvHH")
+st_numscalar("e(H)",N)
+st_numscalar("e(T)",T)
+st_matrix("e(invDD)",invDD)
+st_matrix("e(invHH)",invHH) 
+
+ if (N<T)
+		{
+        CinvHHDH=readMat(root,"twoWayCinvHHDH")
+		A=readMat(root,"twoWayA")
+		B=readMat(root,"twoWayB")
+		st_matrix("e(CinvHHDH)",CinvHHDH)
+		st_matrix("e(A)",A)
+		st_matrix("e(B)",B)
+	
+		}
+    else
+	{
+        AinvDDDH=readMat(root,"twoWayAinvDDDH")
+		C=readMat(root,"twoWayC")
+		B=readMat(root,"twoWayB")
+		st_matrix("e(AinvDDDH)",AinvDDDH)
+		st_matrix("e(C)",C)
+		st_matrix("e(B)",B)
+		
+    }
+
+
+}
+
+end
+
+
+program define twowayload, rclass
+syntax varlist(min=2 max=3) [if] [in]
+version 11
+syntax varlist(min=2 max=3) [if] [in]
+gettoken twoway_id aux: varlist
+gettoken twoway_t twoway_w: aux
+//summ `varlist'
+// I need to make it robust to non 1,2,3... ids.
+
+
+	egen twoWaynewid= group(`twoway_id')
+	egen twoWaynewt= group(`twoway_t')
+	local newvars twoWaynewid twoWaynewt
+
+	tempvar twoway_sample
+	mark `twoway_sample' `if' `in'
+	markout `twoway_sample' `newvars'
+
+
+
+	mata projDummies_load()
 //di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
-//return add
-//return post r(B), esample(`twoway_sample') 
-//obs(`nobs') dof(`dof')
+	scalar twoWayw="`twoway_w'"
+	scalar twoWayif="`if'"
+	scalar twoWayin="`in'"
+
+
 
 end
+
+capture program drop twowayreg
+
+program define twowayreg, eclass sortpreserve
+    version 14
  
+    syntax varlist(numeric ts fv) [if] [in], [,ROBUST]
+    gettoken depvar indepvars : varlist
+    _fv_check_depvar `depvar'
+    fvexpand `indepvars' 
+	marksample touse
+ 
+   if ("`robust'"=="robust"){
+   	qui{
+  	regress `depvar' `indepvars' if `touse', robust
+    mat b=e(b)
+	scalar N_1=e(N)
+	scalar R2= e(r2)
+    scalar vadj = e(df_r)/(e(df_r)- N - T)
+    matrix V = vadj*e(V)
+    }
+  eret post b V 
+  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
+  display _col(45) "R-squared" _col(60)"="  _col(65) R2
+
+  eret display
+	
+ }
+  else{
+  qui{
+  	regress `depvar' `indepvars'if `touse'
+    mat b=e(b)
+    matrix V = e(V)
+  }
+  eret post b V
+  eret display
+  }
+  
+end
+ 
+
+
+capture program drop dofadj
+program define dofadj, rclass
+version 11
+syntax ,[Root(name)]
+local dof = `e(df_r)'
+mata dofadj(`dof')
+mata st_local("dofadj", strofreal(dofadj(`dof')))
+return scalar dofadj = `dofadj'
+end
+
+capture program drop dofadj_l
+program define dofadj_l, rclass
+version 11
+syntax ,[Root(name)]
+local dof = `e(df_r)'
+mata dofadj_l("`root'",`dof')
+mata st_local("dofadj", strofreal(dofadj_l("`root'",`dof')))
+return scalar dofadj = `dofadj'
+end
