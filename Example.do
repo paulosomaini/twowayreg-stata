@@ -60,8 +60,10 @@ twowayset hid tid
 twowaysample hid tid, gen(sample)
 projvar y x*, p(w_)
 reg w_y w_x* if sample==1, noc robust
-drop w_*
 dofadj
+twowayreg w_y w_x* if sample==1, robust
+
+drop w_*
 
 twowaysave hid tid
 }
@@ -78,6 +80,8 @@ use Example2.dta
 twowayload hid tid
 projvar y x*, p(w_)
 reg w_y w_x* if sample==1, noc robust
-drop w_*
 dofadj_l
+twowayreg w_y w_x* if sample==1, robust
+
+drop w_*
 

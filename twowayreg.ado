@@ -534,6 +534,47 @@ gettoken twoway_t twoway_w: aux
 
 end
 
+capture program drop twowayreg
+
+program define twowayreg, eclass sortpreserve
+    version 14
+ 
+    syntax varlist(numeric ts fv) [if] [in], [,ROBUST]
+    gettoken depvar indepvars : varlist
+    _fv_check_depvar `depvar'
+    fvexpand `indepvars' 
+	marksample touse
+ 
+   if ("`robust'"=="robust"){
+   	qui{
+  	regress `depvar' `indepvars' if `touse', robust
+    mat b=e(b)
+	scalar N_1=e(N)
+	scalar R2= e(r2)
+    scalar vadj = e(df_r)/(e(df_r)- N - T)
+    matrix V = vadj*e(V)
+    }
+  eret post b V 
+  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
+  display _col(45) "R-squared" _col(60)"="  _col(65) R2
+
+  eret display
+	
+ }
+  else{
+  qui{
+  	regress `depvar' `indepvars'if `touse'
+    mat b=e(b)
+    matrix V = e(V)
+  }
+  eret post b V
+  eret display
+  }
+  
+end
+ 
+
+
 capture program drop dofadj
 program define dofadj, rclass
 version 11
