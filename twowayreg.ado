@@ -360,8 +360,6 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	
 	}
 
-drop twoWaynewid
-drop twoWaynewt
 qui{
 	ereturn list
 }
@@ -539,7 +537,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 14
  
-    syntax varlist(numeric ts fv) [if] [in], [,ROBUST]
+    syntax varlist(numeric ts fv) [if] [in], [,ROBUST VCE VCE_2]
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
@@ -571,6 +569,71 @@ program define twowayreg, eclass sortpreserve
   display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
   eret display 
  }
+ 
+  else if ("`vce_2'"== "vce_2"){
+
+   qui{
+  	regress `depvar' `indepvars' if `touse', vce(cluster twoWaynewt)
+    mat b=e(b)
+	scalar N_1=e(N)
+	scalar R2= e(r2)
+	scalar F= e(F)
+	scalar df_m= e(df_m)
+	qui{
+		scalar df_r= e(N)-e(df_m)-1
+	}
+	scalar df_r1= e(df_r)
+	scalar rtms= e(rmse)
+	scalar vadj = (N_1-1)*(df_r/(df_r - 1))/(N_1 - df_m - 1)
+    matrix V = vadj*e(V)
+	    }
+  eret post b V
+  ereturn scalar N_1= N_1
+  ereturn scalar R2= R2
+  ereturn scalar F= F
+  ereturn scalar df_m=df_m
+  ereturn scalar df_r= df_r1
+  ereturn scalar rtms= rtms
+  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
+  display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
+  display _col(45) "R-squared" _col(60)"="  _col(65) R2
+  display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
+  eret display 
+
+ }
+
+   else if ("`vce'"== "vce"){
+
+   qui{
+  	regress `depvar' `indepvars' if `touse', vce(cluster twoWaynewt)
+    mat b=e(b)
+	scalar N_1=e(N)
+	scalar R2= e(r2)
+	scalar F= e(F)
+	scalar df_m= e(df_m)
+	qui{
+		scalar df_r= e(N)-e(df_m)-1
+	}
+	scalar df_r1= e(df_r)
+	scalar rtms= e(rmse)
+	scalar vadj = df_r/(df_r- N - T)
+    matrix V = vadj*e(V)
+	    }
+  eret post b V
+  ereturn scalar N_1= N_1
+  ereturn scalar R2= R2
+  ereturn scalar F= F
+  ereturn scalar df_m=df_m
+  ereturn scalar df_r= df_r1
+  ereturn scalar rtms= rtms
+  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
+  display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
+  display _col(45) "R-squared" _col(60)"="  _col(65) R2
+  display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
+  eret display 
+
+ }
+
  
   else{
   qui{
@@ -607,7 +670,7 @@ capture program drop dofadj
 program define dofadj, rclass
 version 11
 syntax ,[Root(name)]
-local dof = `e(df_r)'
+local dof = `e(N)'-`e(df_m)'-1
 mata dofadj(`dof')
 mata st_local("dofadj", strofreal(dofadj(`dof')))
 return scalar dofadj = `dofadj'
@@ -617,7 +680,7 @@ capture program drop dofadj_l
 program define dofadj_l, rclass
 version 11
 syntax ,[Root(name)]
-local dof = `e(df_r)'
+local dof = `e(N)'-`e(df_m)'-1
 mata dofadj_l("`root'",`dof')
 mata st_local("dofadj", strofreal(dofadj_l("`root'",`dof')))
 return scalar dofadj = `dofadj'
