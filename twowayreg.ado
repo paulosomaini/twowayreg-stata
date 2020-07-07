@@ -558,15 +558,20 @@ program define twowayreg, eclass sortpreserve
     scalar vadj = e(df_r)/(e(df_r)- N - T)
     matrix V = vadj*e(V)
     }
-  eret post b V 
+  eret post b V
+  ereturn scalar N_1= N_1
+  ereturn scalar R2= R2
+  ereturn scalar F= F
+  ereturn scalar df_m=df_m
+  ereturn scalar df_r= df_r
+  ereturn scalar rtms= rtms
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
-  display _col(45) "F"  _col(60)"="  _col(65) F
+  display _col(45) "F(" df_m "," df_r ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
   display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
-  eret display
-	
- 	
+  eret display 
  }
+ 
   else{
   qui{
   	regress `depvar' `indepvars' if `touse'
@@ -581,8 +586,14 @@ program define twowayreg, eclass sortpreserve
     matrix V = vadj*e(V)
 	}
   eret post b V
+  ereturn scalar N_1= N_1
+  ereturn scalar R2= R2
+  ereturn scalar F= F
+  ereturn scalar df_m=df_m
+  ereturn scalar df_r= df_r
+  ereturn scalar rtms= rtms
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
-  display _col(45) "F"  _col(60)"="  _col(65) F
+  display _col(45) "F(" df_m "," df_r ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
   display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
   eret display
