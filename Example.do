@@ -56,16 +56,13 @@ forvalues var = 1/`vars' {
 	}
 
 *** 2) Run Our procedure
-twowayset hid tid
-twowaysample hid tid, gen(sample)
+twowayset hid tid, gen(sample)
 projvar y x*, p(w_)
-reg w_y w_x* if sample==1, noc robust
-dofadj
 twowayreg w_y w_x* if sample==1, robust
 
 drop w_*
-
-twowaysave hid tid
+drop sample
+twowaysave
 }
 }
 }
@@ -77,10 +74,8 @@ clear all
 do twowayreg.ado
 use Example2.dta
 *** 2) Run Our procedure
-twowayload hid tid
+twowayload hid tid, gen(sample)
 projvar y x*, p(w_)
-reg w_y w_x* if sample==1, noc robust
-dofadj_l
 twowayreg w_y w_x* if sample==1, robust
 
 drop w_*

@@ -182,7 +182,7 @@ if (N<T)
  
 program define twowayset, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in]
+syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
@@ -210,50 +210,37 @@ gettoken twoway_t twoway_w: aux
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
+	gettoken twoWaynewid aux: varlist
+	gettoken twoWaynewt w: aux
+	qui{
+	if ("`replace'"=="replace") {
+		cap drop `generate'
+	}
+
+	if !("`w'"==""){
+		replace `w' = . if `w'<=0
+	}
 
 
-end
+	mark `generate' `if' `in'
+	markout `generate' `varlist'
 
+	tempvar howmany
+	count if `generate' == 1
 
-program define twowaysample, sortpreserve
-version 11
-syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace] 
+	while `r(N)' {
+		bys `twoWaynewid': gen `howmany' = _N if `generate'
+		replace `generate' = 0 if `howmany' == 1
+		drop `howmany'
 
+		bys `twoWaynewt': gen `howmany' = _N if `generate'
+		replace `generate' = 0 if `howmany' == 1
+		
+		count if `howmany' == 1
+		drop `howmany'
+	}
+	}
 
-
-gettoken twoWaynewid aux: varlist
-gettoken twoWaynewt w: aux
-
-
-qui{
-if ("`replace'"=="replace") {
-	cap drop `generate'
-}
-
-if !("`w'"==""){
-	replace `w' = . if `w'<=0
-}
-
-
-mark `generate' `if' `in'
-markout `generate' `varlist'
-
-tempvar howmany
-count if `generate' == 1
-
-while `r(N)' {
-	bys `twoWaynewid': gen `howmany' = _N if `generate'
-	replace `generate' = 0 if `howmany' == 1
-	drop `howmany'
-
-	bys `twoWaynewt': gen `howmany' = _N if `generate'
-	replace `generate' = 0 if `howmany' == 1
-	
-	count if `howmany' == 1
-	drop `howmany'
-}
-}
-	
 
 
 end
@@ -432,11 +419,8 @@ end
 
 program define twowaysave, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in]
-gettoken twoway_id aux: varlist
-gettoken twoway_t twoway_w: aux
-	egen twoWaynewid= group(`twoway_id')
-	egen twoWaynewt= group(`twoway_t')
+
+
 
 	tempvar twoway_sample
 	mark `twoway_sample' `if' `in'
@@ -501,9 +485,8 @@ end
 
 
 program define twowayload, rclass
-syntax varlist(min=2 max=3) [if] [in]
 version 11
-syntax varlist(min=2 max=3) [if] [in]
+syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
@@ -527,6 +510,39 @@ gettoken twoway_t twoway_w: aux
 	scalar twoWayw="`twoway_w'"
 	scalar twoWayif="`if'"
 	scalar twoWayin="`in'"
+	
+	gettoken twoWaynewid aux: varlist
+	gettoken twoWaynewt w: aux
+	qui{
+	if ("`replace'"=="replace") {
+		cap drop `generate'
+	}
+
+	if !("`w'"==""){
+		replace `w' = . if `w'<=0
+	}
+
+
+	mark `generate' `if' `in'
+	markout `generate' `varlist'
+
+	tempvar howmany
+	count if `generate' == 1
+
+	while `r(N)' {
+		bys `twoWaynewid': gen `howmany' = _N if `generate'
+		replace `generate' = 0 if `howmany' == 1
+		drop `howmany'
+
+		bys `twoWaynewt': gen `howmany' = _N if `generate'
+		replace `generate' = 0 if `howmany' == 1
+		
+		count if `howmany' == 1
+		drop `howmany'
+	}
+	}
+
+
 
 
 
