@@ -1,5 +1,4 @@
 capture program drop twowayset
-capture program drop twowaysample
 capture mata mata drop dofadj()
 capture mata mata drop dofadj_l()
 capture mata mata drop sparse()
@@ -612,12 +611,12 @@ else if ("`drop'"!="drop") {
 
 end
 
-capture program drop twowayreg
+capture program drop twowayreg 
 
 program define twowayreg, eclass sortpreserve
     version 14
  
-    syntax varlist(numeric ts fv) [if] [in], [,ROBUST VCE VCE_2]
+    syntax varlist(numeric ts fv) [if] [in], [,ROBUST VCE VCE_2] [,ABSorb(varnames)] [SAVE(name)] [LOAD(name)] [Prefix(name)][REPLACE][NOPROJ]
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
@@ -625,15 +624,15 @@ program define twowayreg, eclass sortpreserve
  
    if ("`robust'"=="robust"){
    	qui{
-  	regress `depvar' `indepvars' if `touse', robust
+  	regress `depvar' `indepvars' if `touse', noc robust
     mat b=e(b)
 	scalar N_1=e(N)
 	scalar R2= e(r2)
 	scalar F= e(F)
 	scalar df_m= e(df_m)
-	scalar df_r= e(df_r)
+	scalar vadj = e(df_r)/(e(df_r)- N - T)
+	scalar df_r= e(df_r)- N - T
 	scalar rtms= e(rmse)
-    scalar vadj = e(df_r)/(e(df_r)- N - T)
     matrix V = vadj*e(V)
     }
   eret post b V
@@ -653,7 +652,7 @@ program define twowayreg, eclass sortpreserve
   else if ("`vce_2'"== "vce_2"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse', vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
     mat b=e(b)
 	scalar N_1=e(N)
 	scalar R2= e(r2)
@@ -685,7 +684,7 @@ program define twowayreg, eclass sortpreserve
    else if ("`vce'"== "vce"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse', vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
     mat b=e(b)
 	scalar N_1=e(N)
 	scalar R2= e(r2)
@@ -765,3 +764,4 @@ mata dofadj_l("`root'",`dof')
 mata st_local("dofadj", strofreal(dofadj_l("`root'",`dof')))
 return scalar dofadj = `dofadj'
 end
+
