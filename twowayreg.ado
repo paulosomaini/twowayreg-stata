@@ -182,7 +182,7 @@ if (N<T)
  
 program define twowayset, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace]
+syntax varlist(min=2 max=3) [if] [in], [,DROP] [,Generate(name)] [Replace] 
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
@@ -210,9 +210,41 @@ gettoken twoway_t twoway_w: aux
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
-	gettoken twoWaynewid aux: varlist
+
+
+    gettoken twoWaynewid aux: varlist
 	gettoken twoWaynewt w: aux
+  if("`drop'"=="drop"){
+		if !("`w'"==""){
+		replace `w' = . if `w'<=0
+	}
+	
 	qui{
+	gen aux=1
+	
+	tempvar howmany
+	count if aux == 1
+
+	while `r(N)' {
+	bys `twoWaynewid': gen `howmany' = _N if aux
+	replace aux = 0 if `howmany' == 1
+	drop `howmany'
+
+	bys `twoWaynewt': gen `howmany' = _N if aux
+	replace aux = 0 if `howmany' == 1
+		
+	count if `howmany' == 1
+	drop `howmany'
+	drop if aux!=1
+	drop aux
+	}
+	}
+
+	
+}	
+	
+else if ("`drop'"!="drop") {
+    qui{
 	if ("`replace'"=="replace") {
 		cap drop `generate'
 	}
@@ -240,6 +272,7 @@ gettoken twoway_t twoway_w: aux
 		drop `howmany'
 	}
 	}
+}
 
 
 
@@ -486,7 +519,7 @@ end
 
 program define twowayload, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in], Generate(name) [Replace]
+syntax varlist(min=2 max=3) [if] [in], [,DROP] [,Generate(name)] [Replace] 
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
@@ -511,9 +544,39 @@ gettoken twoway_t twoway_w: aux
 	scalar twoWayif="`if'"
 	scalar twoWayin="`in'"
 	
-	gettoken twoWaynewid aux: varlist
-	gettoken twoWaynewt w: aux
+  gettoken twoWaynewid aux: varlist
+  gettoken twoWaynewt w: aux
+if("`drop'"=="drop"){
+		if !("`w'"==""){
+		replace `w' = . if `w'<=0
+	}
+	
 	qui{
+	gen aux=1
+	
+	tempvar howmany
+	count if aux == 1
+
+	while `r(N)' {
+	bys `twoWaynewid': gen `howmany' = _N if aux
+	replace aux = 0 if `howmany' == 1
+	drop `howmany'
+
+	bys `twoWaynewt': gen `howmany' = _N if aux
+	replace aux = 0 if `howmany' == 1
+		
+	count if `howmany' == 1
+	drop `howmany'
+	drop if aux!=1
+	drop aux
+	}
+	}
+
+	
+}	
+	
+else if ("`drop'"!="drop") {
+    qui{
 	if ("`replace'"=="replace") {
 		cap drop `generate'
 	}
@@ -541,6 +604,7 @@ gettoken twoway_t twoway_w: aux
 		drop `howmany'
 	}
 	}
+}
 
 
 
