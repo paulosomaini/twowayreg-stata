@@ -661,7 +661,7 @@ program define twowayreg, eclass sortpreserve
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
-	scalar df_r1= e(df_r) - N - T
+	scalar df_r1= e(df_r)
 	scalar rtms= e(rmse)
 	scalar vadj = (N_1-1)*(df_r/(df_r - 1))/(N_1 - df_m - 1)
     matrix V = vadj*e(V)
@@ -693,7 +693,7 @@ program define twowayreg, eclass sortpreserve
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
-	scalar df_r1= e(df_r) - N - T
+	scalar df_r1= e(df_r)
 	scalar rtms= e(rmse)
 	scalar vadj = df_r/(df_r- N - T)
     matrix V = vadj*e(V)
