@@ -616,7 +616,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 14
  
-    syntax varlist(numeric ts fv) [if] [in], [,ROBUST VCE VCE_2] [,ABSorb(varnames)] [SAVE(name)] [LOAD(name)] [Prefix(name)][REPLACE][NOPROJ]
+    syntax varlist(numeric ts fv) [if] [in], [,ROBUST VCE VCE_2] 
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
@@ -631,7 +631,7 @@ program define twowayreg, eclass sortpreserve
 	scalar F= e(F)
 	scalar df_m= e(df_m)
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
-	scalar df_r= e(df_r)- N - T
+	scalar df_r= e(df_r) - N - T
 	scalar rtms= e(rmse)
     matrix V = vadj*e(V)
     }
@@ -661,7 +661,7 @@ program define twowayreg, eclass sortpreserve
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
-	scalar df_r1= e(df_r)
+	scalar df_r1= e(df_r) - N - T
 	scalar rtms= e(rmse)
 	scalar vadj = (N_1-1)*(df_r/(df_r - 1))/(N_1 - df_m - 1)
     matrix V = vadj*e(V)
@@ -693,7 +693,7 @@ program define twowayreg, eclass sortpreserve
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
-	scalar df_r1= e(df_r)
+	scalar df_r1= e(df_r) - N - T
 	scalar rtms= e(rmse)
 	scalar vadj = df_r/(df_r- N - T)
     matrix V = vadj*e(V)
@@ -716,13 +716,13 @@ program define twowayreg, eclass sortpreserve
  
   else{
   qui{
-  	regress `depvar' `indepvars' if `touse'
+  	regress `depvar' `indepvars' if `touse', noc
     mat b=e(b)
 	scalar N_1=e(N)
 	scalar R2= e(r2)
 	scalar F= e(F)
 	scalar df_m= e(df_m)
-	scalar df_r= e(df_r)
+	scalar df_r= e(df_r) - N - T
 	scalar rtms= e(rmse)
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
     matrix V = vadj*e(V)

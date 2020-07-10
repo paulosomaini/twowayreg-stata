@@ -58,7 +58,7 @@ forvalues var = 1/`vars' {
 *** 2) Run Our procedure
 twowayset hid tid, gen(sample)
 projvar y x*, p(w_)
-twowayreg w_y w_x* if sample==1, robust
+twowayreg w_y w_x* if sample==1
 
 drop w_*
 drop sample
