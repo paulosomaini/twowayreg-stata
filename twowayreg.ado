@@ -625,59 +625,21 @@ program define twowayreg, eclass sortpreserve
    if ("`robust'"=="robust"){
    	qui{
   	regress `depvar' `indepvars' if `touse', noc robust
-    mat b=e(b)
-	scalar N_1=e(N)
-	scalar R2= e(r2)
-	scalar F= e(F)
-	scalar df_m= e(df_m)
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
-	scalar df_r= e(df_r) - N - T
-	scalar rtms= e(rmse)
-    matrix V = vadj*e(V)
+	scalar df_r1= e(df_r) - N - T
     }
-  eret post b V
-  ereturn scalar N_1= N_1
-  ereturn scalar R2= R2
-  ereturn scalar F= F
-  ereturn scalar df_m=df_m
-  ereturn scalar df_r= df_r
-  ereturn scalar rtms= rtms
-  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
-  display _col(45) "F(" df_m "," df_r ")"  _col(60)"="  _col(65) F
-  display _col(45) "R-squared" _col(60)"="  _col(65) R2
-  display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
-  eret display 
  }
  
   else if ("`vce_2'"== "vce_2"){
 
    qui{
   	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
-    mat b=e(b)
-	scalar N_1=e(N)
-	scalar R2= e(r2)
-	scalar F= e(F)
-	scalar df_m= e(df_m)
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
 	scalar df_r1= e(df_r)
-	scalar rtms= e(rmse)
 	scalar vadj = (N_1-1)*(df_r/(df_r - 1))/(N_1 - df_m - 1)
-    matrix V = vadj*e(V)
 	    }
-  eret post b V
-  ereturn scalar N_1= N_1
-  ereturn scalar R2= R2
-  ereturn scalar F= F
-  ereturn scalar df_m=df_m
-  ereturn scalar df_r= df_r1
-  ereturn scalar rtms= rtms
-  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
-  display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
-  display _col(45) "R-squared" _col(60)"="  _col(65) R2
-  display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
-  eret display 
 
  }
 
@@ -685,63 +647,46 @@ program define twowayreg, eclass sortpreserve
 
    qui{
   	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
-    mat b=e(b)
-	scalar N_1=e(N)
-	scalar R2= e(r2)
-	scalar F= e(F)
-	scalar df_m= e(df_m)
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
 	scalar df_r1= e(df_r)
-	scalar rtms= e(rmse)
 	scalar vadj = df_r/(df_r- N - T)
-    matrix V = vadj*e(V)
 	    }
-  eret post b V
-  ereturn scalar N_1= N_1
-  ereturn scalar R2= R2
-  ereturn scalar F= F
-  ereturn scalar df_m=df_m
-  ereturn scalar df_r= df_r1
-  ereturn scalar rtms= rtms
-  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
-  display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
-  display _col(45) "R-squared" _col(60)"="  _col(65) R2
-  display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
-  eret display 
-
  }
 
  
   else{
   qui{
   	regress `depvar' `indepvars' if `touse', noc
-    mat b=e(b)
+	scalar df_r1= e(df_r)
+	scalar vadj = e(df_r)/(e(df_r)- N - T)
+	}
+  }
+	mat b=e(b)
 	scalar N_1=e(N)
 	scalar R2= e(r2)
 	scalar F= e(F)
 	scalar df_m= e(df_m)
-	scalar df_r= e(df_r) - N - T
 	scalar rtms= e(rmse)
-	scalar vadj = e(df_r)/(e(df_r)- N - T)
-    matrix V = vadj*e(V)
-	}
+	matrix V = vadj*e(V)
+
   eret post b V
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
   ereturn scalar F= F
   ereturn scalar df_m=df_m
-  ereturn scalar df_r= df_r
+  ereturn scalar df_r1= df_r1
   ereturn scalar rtms= rtms
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
-  display _col(45) "F(" df_m "," df_r ")"  _col(60)"="  _col(65) F
+  display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
   display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
   eret display
-  }
+  
   
 end
+ 
  
 
 
