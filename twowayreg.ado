@@ -662,7 +662,7 @@ program define twowayreg, eclass sortpreserve
   else{
   qui{
   	regress `depvar' `indepvars' if `touse', noc
-	scalar df_r1= e(df_r)
+	scalar df_r1= e(df_r)-N-T
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	}
   }
