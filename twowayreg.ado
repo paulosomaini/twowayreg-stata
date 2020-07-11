@@ -397,6 +397,7 @@ else {
 	matrix B=e(B)
 }
 
+
 end
 
 capture program drop twowaysave
@@ -634,6 +635,8 @@ program define twowayreg, eclass sortpreserve
 
    qui{
   	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
+	scalar N_1=e(N)
+	scalar df_m= e(df_m)
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
@@ -685,8 +688,7 @@ program define twowayreg, eclass sortpreserve
   eret display
   
   
-end
- 
+end 
  
 
 
