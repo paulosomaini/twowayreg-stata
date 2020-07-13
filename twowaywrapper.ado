@@ -8,20 +8,17 @@ program define twowayregwrap, eclass sortpreserve
 version 14 
 syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) DROP GENerate(name)] [, NEWVars(name) REPLACE] [, ROBUST VCE VCE_2]
 gettoken depvar indepvars : varlist
-_fv_check_depvar `depvar'
-fvexpand `indepvars' 
-marksample touse
 
 if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
     twowayset `absorb', drop
 	
 	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
-		projvar `depvar' `indepvars', p(`NEWVars' `varname')
-		local newdepvar w_dist
-		local newindepvar w_mean_np_5 w_x*
-		
+
+		projvar `depvar' `indepvars', p(`NEWVars' new_)
+		tokenize `varlist'
+				
 		if("`robust'"=="robust") {
-			twowayreg `newdepvar' `newindepvar', robust
+			twowayreg `new_depvar' `new_indepvar', robust
 			}
 		else if("`vce'"=="vce"){
 			twowayreg `w_'`depvar' `w_'`indepvars', vce

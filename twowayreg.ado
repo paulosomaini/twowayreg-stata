@@ -411,6 +411,7 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
+root =st_local("root")
 N=st_numscalar("N")
 T=st_numscalar("T")
 invDD=st_matrix("invDD")
@@ -452,8 +453,11 @@ end
 
 program define twowaysave, rclass
 version 11
+syntax  [if] [in] [, folder(string)] [Root(name)]
 
-
+if ("`folder(`string')'"=="`folder(`string')'"){
+	cd "`folder'"
+}
 
 	tempvar twoway_sample
 	mark `twoway_sample' `if' `in'
@@ -464,8 +468,12 @@ version 11
 	scalar twoWayw="`twoway_w'"
 	scalar twoWayif="`if'"
 	scalar twoWayin="`in'"
+
+
+	
 drop twoWaynewid
 drop twoWaynewt
+
 end
 
 capture program drop twowayload
@@ -479,6 +487,7 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
+root =st_local("root")
 w = st_local("twoway_w")
 sampleVarName = st_local("twoway_sample")
 N=readMat(root,"twoWayN1")
@@ -519,9 +528,13 @@ end
 
 program define twowayload, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in], [,DROP] [,Generate(name)] [Replace] 
+syntax varlist(min=2 max=3) [if] [in],[, FOLDER(string)] [,DROP] [,Generate(name)] [Replace] [Root(name)] 
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
+
+if ("`folder(`string')'"=="`folder(`string')'"){
+	cd "`folder'"
+}
 //summ `varlist'
 // I need to make it robust to non 1,2,3... ids.
 
