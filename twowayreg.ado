@@ -453,7 +453,7 @@ end
 
 program define twowaysave, rclass
 version 11
-syntax  [if] [in] [, folder(string)] [Root(name)]
+syntax  [if] [in] [, FOLDER(string)] [Root(name)]
 
 if ("`folder(`string')'"=="`folder(`string')'"){
 	cd "`folder'"

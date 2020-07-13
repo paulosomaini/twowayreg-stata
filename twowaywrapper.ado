@@ -6,7 +6,7 @@ capture program drop twowayregwrap
 
 program define twowayregwrap, eclass sortpreserve
 version 14 
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) DROP GENerate(name)] [, NEWVars(name) REPLACE] [, ROBUST VCE VCE_2]
+syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) DROP GENerate(name)] [, NEWVars(name) REPLACE] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
 gettoken depvar indepvars : varlist
 
 if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
@@ -36,18 +36,8 @@ if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace"){
 		projvar `depvar' `indepvars', replace
 		
-		if("`robust'"=="robust") {
-		twowayreg `depvar' `indepvars', robust
-			}
-		else if("`vce'"=="vce"){
-			twowayreg `depvar' `indepvars', vce
-		}
-		else if("`vce_2'"=="vce_2"){
-			twowayreg `depvar' `indepvars', vce_2
-		}
-		else{
-			twowayreg `depvar' `indepvars'
-		}
+		twowayreg `depvar' `indepvars', `vce'
+		
 	}
 }
 
@@ -76,24 +66,23 @@ else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"){
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace"){
 		projvar `depvar' `indepvars', replace
 		
-		if("`robust'"=="robust") {
-		twowayreg `depvar' `indepvars' if `generate'==1 , robust
-			}
-		else if("`vce'"=="vce"){
-			twowayreg `depvar' `indepvars' if `generate'==1, vce
-		}
-		else if("`vce_2'"=="vce_2"){
-			twowayreg `depvar' `indepvars' if `generate'==1, vce_2
-		}
-		else{
-			twowayreg `depvar' `indepvars' if `generate'==1
-		}
+		twowayreg `depvar' `indepvars' if `generate'==1, `vce'
 	}
 	
 }
 
-   drop twoWaynewid
-	drop twoWaynewt
+if ("`SAVE'"=="save"){
+    twowaysave
+}
+
+
+else if ("`rootsave(`name')'"=="`rootsave(name)'"){
+    twowaysave, root(`rootsave')
+}
+
+else if ("`foldersave(`string')'"=="`foldersave(`string')'"){
+    twowaysave, folder(`foldersave')
+}
 
 
 end 
