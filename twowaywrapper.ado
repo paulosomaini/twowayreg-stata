@@ -13,29 +13,22 @@ if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
     twowayset `absorb', drop
 	
 	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
-
-		projvar `depvar' `indepvars', p(`NEWVars' new_)
-		tokenize `varlist'
-				
-		if("`robust'"=="robust") {
-			twowayreg `new_depvar' `new_indepvar', robust
-			}
-		else if("`vce'"=="vce"){
-			twowayreg `w_'`depvar' `w_'`indepvars', vce
+		qui{
+			des, varlist
 		}
-		else if("`vce_2'"=="vce_2"){
-			twowayreg `w_'`depvar' `w_'`indepvars', vce_2
+		local myvars=r(varlist)
+		projvar `depvar' `indepvars', p(`NEWVars' w_) 
+		qui{
+			des,varlist
 		}
-		else{
-			twowayreg `w_'`depvar' `w_'`indepvars'
-		}
-
+		local myvars2=r(varlist)
+		local tokeep : list myvars2-myvars  
+		twowayreg `tokeep', `vce'
 		}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace"){
 		projvar `depvar' `indepvars', replace
-		
 		twowayreg `depvar' `indepvars', `vce'
 		
 	}
@@ -45,32 +38,29 @@ else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"){
 	twowayset `absorb', gen(`generate')
 	
 		if ("`NEWVars(`varname')'"=="`newvars(`varname')'" & "`replace'"==""){
-		projvar `depvar' `indepvars', p(`NEWVars' w_)
-		
-		if("`robust'"=="robust") {
-			twowayreg `w_depvar' `w_indepvars' if `generate'==1, robust
-			}
-		else if("`vce'"=="vce"){
-			twowayreg `w_'`depvar' `w_'`indepvars' if `generate'==1, vce
+		projvar `depvar' `indepvars', p(`NEWVars')
+		qui{
+			des, varlist
 		}
-		else if("`vce_2'"=="vce_2"){
-			twowayreg `w_'`depvar' `w_'`indepvars' if `generate'==1, vce_2
+		local myvars=r(varlist)
+		projvar `depvar' `indepvars', p(`NEWVars' w_) 
+		qui{
+			des,varlist
 		}
-		else{
-			twowayreg `w_'`depvar' `w_'`indepvars' if `generate'==1
-		}
-
+		local myvars2=r(varlist)
+		local tokeep : list myvars2-myvars  
+		twowayreg `tokeep', `vce'
 		}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace"){
 		projvar `depvar' `indepvars', replace
-		
 		twowayreg `depvar' `indepvars' if `generate'==1, `vce'
 	}
 	
 }
 
+/*
 if ("`SAVE'"=="save"){
     twowaysave
 }
@@ -83,6 +73,6 @@ else if ("`rootsave(`name')'"=="`rootsave(name)'"){
 else if ("`foldersave(`string')'"=="`foldersave(`string')'"){
     twowaysave, folder(`foldersave')
 }
-
+*/
 
 end 
