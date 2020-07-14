@@ -38,7 +38,6 @@ else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"){
 	twowayset `absorb', gen(`generate')
 	
 		if ("`NEWVars(`varname')'"=="`newvars(`varname')'" & "`replace'"==""){
-		projvar `depvar' `indepvars', p(`NEWVars')
 		qui{
 			des, varlist
 		}
@@ -49,7 +48,7 @@ else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"){
 		}
 		local myvars2=r(varlist)
 		local tokeep : list myvars2-myvars  
-		twowayreg `tokeep', `vce'
+		twowayreg `tokeep' if `generate'==1, `vce'
 		}
 		
 		
