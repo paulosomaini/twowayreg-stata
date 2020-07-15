@@ -16,7 +16,7 @@ if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
 	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"=="" & "`noproj'"==""){
 		qui ds
 		local myvars= r(varlist)
-		projvar `depvar' `indepvars', p(`NEWVars' w_) 
+		projvar `depvar' `indepvars', p(`newvars') 
 		preserve
 		drop `myvars'
 		qui ds 
@@ -47,7 +47,7 @@ else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"  & "`nop
 			des, varlist
 		}
 		local myvars=r(varlist)
-		projvar `depvar' `indepvars', p(`NEWVars' w_) 
+		projvar `depvar' `indepvars', p(`newvars')
 		qui{
 			des,varlist
 		}
