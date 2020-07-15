@@ -13,17 +13,17 @@ gettoken depvar indepvars : varlist
 if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
     twowayset `absorb', drop
 	
-	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"=="" & "`noproj'"==""){
-		qui ds
-		local myvars= r(varlist)
-		projvar `depvar' `indepvars', p(`newvars') 
-		preserve
-		drop `myvars'
-		qui ds 
-		local myvars2 `r(varlist)' 
-		twowayreg `myvars2', `vce'
-		restore
-		}
+	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"=="" & "`noproj'"==""){
+		capture confirm variable `newvars'
+		if !_rc {
+                 di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+				}
+        else {
+              projvar `depvar' `indepvars', p(`newvars')
+			  twowayreg `newvars'*, `vce'
+			  }
+				
+	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" & "`noproj'"==""){
@@ -43,25 +43,23 @@ else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"  & "`nop
 	twowayset `absorb', gen(`generate')
 	
 		if ("`NEWVars(`varname')'"=="`newvars(`varname')'" & "`replace'"==""){
-		qui{
-			des, varlist
-		}
-		local myvars=r(varlist)
-		projvar `depvar' `indepvars', p(`newvars')
-		qui{
-			des,varlist
-		}
-		local myvars2=r(varlist)
-		local tokeep : list myvars2-myvars  
-		twowayreg `tokeep' if `generate'==1, `vce'
-		}
-		
+		capture confirm variable `newvars'
+		if !_rc {
+                 di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+				}
+        else {
+              projvar `depvar' `indepvars', p(`newvars')
+			  twowayreg `newvars'* if `generate'==1, `vce'
+			  }
+	}	
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		projvar `depvar' `indepvars', replace
 		twowayreg `depvar' `indepvars' if `generate'==1, `vce'
 	}
+
 }	
+
 else if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop" & "`noproj'"=="noproj"){
 		twowayreg `depvar' `indepvars' if `generate'==1, `vce'
 }	
