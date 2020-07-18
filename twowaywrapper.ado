@@ -1,7 +1,3 @@
-clear all
-do twowayreg.ado
-
-
 capture program drop twowayregwrap
 
 program define twowayregwrap, eclass sortpreserve
