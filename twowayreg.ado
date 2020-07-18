@@ -296,7 +296,7 @@ void projVar()
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	newt=st_local("newt")
-	sampleVarName = st_local("twoway_sample")
+	sampleVarName = st_local("depvar")
 	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -359,12 +359,11 @@ end
 program define projvar, nclass
 version 11
 syntax varlist, [Prefix(name)] [REPLACE] 
-
-	tempvar twoway_sample
-	loc tif=twoWayif
-	loc tin=twoWayin
-	mark `twoway_sample' `tif' `tin'
-	markout `twoway_sample' `varlist'
+	
+	gettoken depvar indepvars : varlist
+    _fv_check_depvar `depvar'
+    fvexpand `indepvars' 
+ 
 
 
 	foreach currvar of varlist `varlist' {
@@ -379,9 +378,7 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	
 	}
 
-qui{
-	ereturn list
-}
+
 scalar N= e(H)
 scalar T= e(T)
 matrix invDD=e(invDD)
@@ -639,10 +636,24 @@ program define twowayreg, eclass sortpreserve
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	marksample touse
+scalar N= e(H)
+scalar T= e(T)
+matrix invDD=e(invDD)
+matrix invHH=e(invHH)
+if (N<T){
+	matrix CinvHHDH=e(CinvHHDH)
+	matrix A= e(A)
+	matrix B=e(B)
+}
+else {
+	matrix AinvDDDH=e(AinvDDDH)
+	matrix C= e(C)
+	matrix B=e(B)
+}
  
    if ("`robust'"=="robust"){
    	qui{
-  	regress `depvar' `indepvars' if `touse', noc robust
+  	regress `depvar' `indepvars' if `touse' , noc robust
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	scalar df_r1= e(df_r) - N - T
     }
@@ -651,7 +662,7 @@ program define twowayreg, eclass sortpreserve
   else if ("`vce_2'"== "vce_2"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse' , noc vce(cluster twoWaynewt)
 	scalar N_1=e(N)
 	scalar df_m= e(df_m)
 	qui{
@@ -691,6 +702,7 @@ program define twowayreg, eclass sortpreserve
 	scalar rtms= e(rmse)
 	matrix V = vadj*e(V)
 
+
   eret post b V
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
@@ -701,16 +713,16 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar H= N
   ereturn scalar T= T
   ereturn matrix invDD= invDD
-  ereturn matrix invHH=invHH
+  ereturn matrix invHH= invHH
   if (N<T){
 	ereturn matrix CinvHHDH=CinvHHDH
 	ereturn matrix A= A
-	ereturn matrix B=B
+	ereturn matrix B= B
  }
 else {
 	ereturn matrix AinvDDDH=AinvDDDH
 	ereturn matrix C= C
-	ereturn matrix B=B
+	ereturn matrix B= B
 }
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
   display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
