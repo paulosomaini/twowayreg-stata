@@ -219,24 +219,24 @@ gettoken twoway_t twoway_w: aux
 	}
 	
 	qui{
-	gen aux=1
+	tempvar auxiliar	
+	gen `auxiliar'=1
 	
 	tempvar howmany
-	count if aux == 1
+	count if `auxiliar'== 1
 
 	while `r(N)' {
-	bys `twoWaynewid': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
+	bys `twoWaynewid': gen `howmany' = _N if `auxiliar'
+	replace `auxiliar '= 0 if `howmany' == 1
 	drop `howmany'
 
-	bys `twoWaynewt': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
+	bys `twoWaynewt': gen `howmany' = _N if `auxiliar'
+	replace `auxiliar'= 0 if `howmany' == 1
 		
 	count if `howmany' == 1
 	drop `howmany'
-	drop if aux!=1
-	drop aux
-	}
+	drop if `auxiliar' !=1
+		}
 	}
 
 	
@@ -296,7 +296,7 @@ void projVar()
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	newt=st_local("newt")
-	sampleVarName = st_local("depvar")
+	sampleVarName = st_local("`samplevar'")
 	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -358,13 +358,35 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [Prefix(name)] [REPLACE] 
+syntax varlist, [Prefix(name)] [GENerate(name)] [REPLACE] 
 	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
- 
+	tempvar twoway_sample
+	loc tif=twoWayif
+	loc tin=twoWayin
+	mark `twoway_sample' `tif' `tin'
+	markout `twoway_sample' `varlist'
+	qui{
+		capture confirm variable `generate'
+		if !_rc {
+					replace `generate'=0 if `depvar'==.
+				    tempvar samplevar
+			   	    gen `samplevar'=`generate'                      
 
+               }
+               else {
+					  tempvar samplevar
+					  gen `samplevar'=1  
+					  replace `samplevar'=0 if `depvar'==.
+					  drop if `samplevar'==0
+               }
+	}
+
+	/*tempvar twoway_sample
+	gen `twoway_sample'=1
+	replace `twoway_sample'=0 if `d'==. */
 
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
@@ -556,34 +578,31 @@ if ("`folder(`string')'"=="`folder(`string')'"){
 	
   gettoken twoWaynewid aux: varlist
   gettoken twoWaynewt w: aux
-  gen hola=1
-  by twoWaynewid: egen holas=sum(hola)
-  gen nholas=-holas
-  sort nholas
+
 if("`drop'"=="drop"){
 		if !("`w'"==""){
 		replace `w' = . if `w'<=0
 	}
 	
 	qui{
-	gen aux=1
+	tempvar auxiliar	
+	gen `auxiliar'=1
 	
 	tempvar howmany
-	count if aux == 1
+	count if `auxiliar'== 1
 
 	while `r(N)' {
-	bys `twoWaynewid': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
+	bys `twoWaynewid': gen `howmany' = _N if `auxiliar'
+	replace `auxiliar '= 0 if `howmany' == 1
 	drop `howmany'
 
-	bys `twoWaynewt': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
+	bys `twoWaynewt': gen `howmany' = _N if `auxiliar'
+	replace `auxiliar'= 0 if `howmany' == 1
 		
 	count if `howmany' == 1
 	drop `howmany'
-	drop if aux!=1
-	drop aux
-	}
+	drop if `auxiliar' !=1
+		}
 	}
 
 	
@@ -636,20 +655,20 @@ program define twowayreg, eclass sortpreserve
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	marksample touse
-scalar N= e(H)
-scalar T= e(T)
-matrix invDD=e(invDD)
-matrix invHH=e(invHH)
-if (N<T){
-	matrix CinvHHDH=e(CinvHHDH)
-	matrix A= e(A)
-	matrix B=e(B)
-}
-else {
-	matrix AinvDDDH=e(AinvDDDH)
-	matrix C= e(C)
-	matrix B=e(B)
-}
+	scalar N= e(H)
+	scalar T= e(T)
+	matrix invDD=e(invDD)
+	matrix invHH=e(invHH)
+	if (N<T){
+		matrix CinvHHDH=e(CinvHHDH)
+		matrix A= e(A)
+		matrix B=e(B)
+	}
+	else {
+		matrix AinvDDDH=e(AinvDDDH)
+		matrix C= e(C)
+		matrix B=e(B)
+	}
  
    if ("`robust'"=="robust"){
    	qui{
