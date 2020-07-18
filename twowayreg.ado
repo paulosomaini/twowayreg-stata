@@ -559,6 +559,10 @@ if ("`folder(`string')'"=="`folder(`string')'"){
 	
   gettoken twoWaynewid aux: varlist
   gettoken twoWaynewt w: aux
+  gen hola=1
+  by twoWaynewid: egen holas=sum(hola)
+  gen nholas=-holas
+  sort nholas
 if("`drop'"=="drop"){
 		if !("`w'"==""){
 		replace `w' = . if `w'<=0
@@ -694,6 +698,20 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar df_m=df_m
   ereturn scalar df_r1= df_r1
   ereturn scalar rtms= rtms
+  ereturn scalar H= N
+  ereturn scalar T= T
+  ereturn matrix invDD= invDD
+  ereturn matrix invHH=invHH
+  if (N<T){
+	ereturn matrix CinvHHDH=CinvHHDH
+	ereturn matrix A= A
+	ereturn matrix B=B
+ }
+else {
+	ereturn matrix AinvDDDH=AinvDDDH
+	ereturn matrix C= C
+	ereturn matrix B=B
+}
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
   display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
