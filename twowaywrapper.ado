@@ -7,7 +7,7 @@ gettoken depvar indepvars : varlist
 
 
 if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
-    twowayset `absorb', drop
+	twowayset `absorb', drop
 	
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"=="" & "`noproj'"==""){
 		capture confirm variable `newvars'

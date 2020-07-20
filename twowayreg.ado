@@ -359,7 +359,7 @@ end
 program define projvar, nclass
 version 11
 syntax varlist, [Prefix(name)] [GENerate(name)] [REPLACE] 
-	
+		
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
@@ -368,25 +368,37 @@ syntax varlist, [Prefix(name)] [GENerate(name)] [REPLACE]
 	loc tin=twoWayin
 	mark `twoway_sample' `tif' `tin'
 	markout `twoway_sample' `varlist'
-	qui{
+		qui{
 		capture confirm variable `generate'
 		if !_rc {
-					replace `generate'=0 if `depvar'==.
-				    tempvar samplevar
-			   	    gen `samplevar'=`generate'                      
+					capture confirm variable `samplevar'
+					if !_rc {
+						replace `samplevar'=`generate'
+						replace `samplevar'=0 if `depvar'==.
+					}
+					else{
+						tempvar samplevar
+						gen `samplevar'=`generate'
+						replace `samplevar'=0 if `depvar'==.
+					}
 
                }
                else {
-					  tempvar samplevar
-					  gen `samplevar'=1  
-					  replace `samplevar'=0 if `depvar'==.
-					  drop if `samplevar'==0
+					  capture confirm variable `samplevar'
+					  if !_rc {
+						  replace `samplevar'=1  
+						  replace `samplevar'=0 if `depvar'==.
+
+					}
+					else{
+						  tempvar samplevar
+					      gen `samplevar'=1  
+					      replace `samplevar'=0 if `depvar'==.
+					}
+					  
                }
 	}
 
-	/*tempvar twoway_sample
-	gen `twoway_sample'=1
-	replace `twoway_sample'=0 if `d'==. */
 
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
@@ -399,7 +411,6 @@ syntax varlist, [Prefix(name)] [GENerate(name)] [REPLACE]
 	mata projVar()
 	
 	}
-
 
 scalar N= e(H)
 scalar T= e(T)
