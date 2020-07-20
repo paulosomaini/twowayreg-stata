@@ -198,7 +198,6 @@ gettoken twoway_t twoway_w: aux
 
 
 
-	mata projDummies()
 //di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
@@ -273,6 +272,7 @@ else if ("`drop'"!="drop") {
 	}
 }
 
+	mata projDummies()
 
 
 end
