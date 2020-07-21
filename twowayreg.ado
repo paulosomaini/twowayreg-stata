@@ -123,7 +123,7 @@ D=.
 newid=st_matrix("twoWaynewid")
 newt=st_matrix("twoWaynewt")
 w = st_local("twoway_w")
-sampleVarName = st_local("twoway_sample")
+sampleVarName = st_local("auxiliar")
 if (w==""){
 D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
 D = (D,J(rows(D),1,1))
@@ -181,23 +181,73 @@ if (N<T)
  
 program define twowayset, rclass
 version 11
-syntax varlist(min=2 max=3) [if] [in], [,DROP] [,Generate(name)] [Replace] 
+syntax varlist(min=2 max=3) [if] [in],
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
 // I need to make it robust to non 1,2,3... ids.
 
+capture confirm variable auxiliar
+	if !_rc {
+			qui{
+				drop auxiliar
+				mark auxiliar `if' `in'
+				markout auxiliar `varlist'
+
+				tempvar howmany
+				count if auxiliar== 1
+
+				while `r(N)' {
+					bys `twoway_id': gen `howmany' = _N if auxiliar
+					replace auxiliar= 0 if `howmany' == 1
+					drop `howmany'
+
+					bys `twoway_t': gen `howmany' = _N if auxiliar
+					replace auxiliar= 0 if `howmany' == 1
+						
+					count if `howmany' == 1
+					drop `howmany'
+					}              
+			}
+		}	
+    else {
+              qui{
+				mark auxiliar `if' `in'
+				markout auxiliar `varlist'
+
+				tempvar howmany
+				count if auxiliar== 1
+
+				while `r(N)' {
+					bys `twoway_id': gen `howmany' = _N if auxiliar
+					replace auxiliar= 0 if `howmany' == 1
+					drop `howmany'
+
+					bys `twoway_t': gen `howmany' = _N if auxiliar
+					replace auxiliar= 0 if `howmany' == 1
+						
+					count if `howmany' == 1
+					drop `howmany'
+					}
+				}
+		}
+	
+	
+	
+
 
 	egen twoWaynewid= group(`twoway_id')
 	egen twoWaynewt= group(`twoway_t')
 	local newvars twoWaynewid twoWaynewt
-
-	tempvar twoway_sample
-	mark `twoway_sample' `if' `in'
-	markout `twoway_sample' `newvars'
+	
 
 
 
+ 		if !("`w'"==""){
+		replace `w' = . if `w'<=0
+	}
+
+		
 	mata projDummies()
 //di in gr "Checkpoint 1"
 //ret li
@@ -209,69 +259,7 @@ gettoken twoway_t twoway_w: aux
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
-
-
-    gettoken twoWaynewid aux: varlist
-	gettoken twoWaynewt w: aux
-  if("`drop'"=="drop"){
-		if !("`w'"==""){
-		replace `w' = . if `w'<=0
-	}
 	
-	qui{
-	gen aux=1
-	
-	tempvar howmany
-	count if aux == 1
-
-	while `r(N)' {
-	bys `twoWaynewid': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
-	drop `howmany'
-
-	bys `twoWaynewt': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
-		
-	count if `howmany' == 1
-	drop `howmany'
-	drop if aux!=1
-	drop aux
-	}
-	}
-
-	
-}	
-	
-else if ("`drop'"!="drop") {
-    qui{
-	if ("`replace'"=="replace") {
-		cap drop `generate'
-	}
-
-	if !("`w'"==""){
-		replace `w' = . if `w'<=0
-	}
-
-
-	mark `generate' `if' `in'
-	markout `generate' `varlist'
-
-	tempvar howmany
-	count if `generate' == 1
-
-	while `r(N)' {
-		bys `twoWaynewid': gen `howmany' = _N if `generate'
-		replace `generate' = 0 if `howmany' == 1
-		drop `howmany'
-
-		bys `twoWaynewt': gen `howmany' = _N if `generate'
-		replace `generate' = 0 if `howmany' == 1
-		
-		count if `howmany' == 1
-		drop `howmany'
-	}
-	}
-}
 
 
 
@@ -296,7 +284,7 @@ void projVar()
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	newt=st_local("newt")
-	sampleVarName = st_local("depvar")
+	sampleVarName = st_local("auxiliar")
 	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -633,24 +621,26 @@ program define twowayreg, eclass sortpreserve
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	marksample touse
-scalar N= e(H)
-scalar T= e(T)
-matrix invDD=e(invDD)
-matrix invHH=e(invHH)
-if (N<T){
-	matrix CinvHHDH=e(CinvHHDH)
-	matrix A= e(A)
-	matrix B=e(B)
-}
-else {
-	matrix AinvDDDH=e(AinvDDDH)
-	matrix C= e(C)
-	matrix B=e(B)
-}
+	tempvar touse2
+	qui gen byte `touse2' = e(sample)
+	scalar N= e(H)
+	scalar T= e(T)
+	matrix invDD=e(invDD)
+	matrix invHH=e(invHH)
+	if (N<T){
+		matrix CinvHHDH=e(CinvHHDH)
+		matrix A= e(A)
+		matrix B=e(B)
+	}
+	else {
+		matrix AinvDDDH=e(AinvDDDH)
+		matrix C= e(C)
+		matrix B=e(B)
+	}
  
    if ("`robust'"=="robust"){
    	qui{
-  	regress `depvar' `indepvars' if `touse' , noc robust
+  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc robust
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	scalar df_r1= e(df_r) - N - T
     }
@@ -659,7 +649,7 @@ else {
   else if ("`vce_2'"== "vce_2"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse' , noc vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc vce(cluster twoWaynewt)
 	scalar N_1=e(N)
 	scalar df_m= e(df_m)
 	qui{
@@ -674,7 +664,7 @@ else {
    else if ("`vce'"== "vce"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse', noc vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc vce(cluster twoWaynewt)
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
@@ -686,7 +676,7 @@ else {
  
   else{
   qui{
-  	regress `depvar' `indepvars' if `touse', noc
+  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc
 	scalar df_r1= e(df_r)-N-T
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	}
@@ -700,7 +690,7 @@ else {
 	matrix V = vadj*e(V)
 
 
-  eret post b V
+  eret post b V, esample(`touse2')
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
   ereturn scalar F= F

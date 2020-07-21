@@ -2,66 +2,45 @@ capture program drop twowayregwrap
 
 program define twowayregwrap, eclass sortpreserve
 version 14 
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) DROP GENerate(name)] [, NEWVars(name) REPLACE NOPROJ] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
+syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
 gettoken depvar indepvars : varlist
 
-tempvar touse
-qui gen byte `touse' = e(sample)
 
-if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
-    twowayset `absorb', drop
+if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`noproj'"==""){
+	qui{
+	tempvar auxiliar1
+	mark `auxiliar1' `if' `in'
+	markout `auxiliar1' `varlist'
+	}
+    twowayset `absorb'
 	
-	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"=="" & "`noproj'"==""){
+	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
 		if !_rc {
                  di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
               projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'*, `vce'
+			  twowayreg `newvars'* if `auxiliar1'==1, `vce'
 			  }
 				
 	}
 		
 		
-	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" & "`noproj'"==""){
-		projvar `depvar' `indepvars', replace
-		twowayreg `depvar' `indepvars', `vce'
-		
-	}
-	
-	else if ("`NEWVars(`name')'"=="" & "`replace'"=="" & "`noproj'"=="noproj"){
-		twowayreg `depvar' `indepvars', `vce'
-	}
-drop twoWaynewid 
-drop twoWaynewt
-}
-
-else if("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop"  & "`noproj'"==""){
-	twowayset `absorb', gen(`generate')
-	
-		if ("`NEWVars(`varname')'"=="`newvars(`varname')'" & "`replace'"==""){
-		capture confirm variable `newvars'
-		if !_rc {
-                 di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
-				}
-        else {
-              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* if `generate'==1, `vce'
-			  }
-	}	
-		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		projvar `depvar' `indepvars', replace
-		twowayreg `depvar' `indepvars' if `generate'==1, `vce'
+		twowayreg `depvar' `indepvars' if `auxiliar1'==1, `vce'
+		
 	}
-
-}	
-
-else if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"!="drop" & "`noproj'"=="noproj"){
-		twowayreg `depvar' `indepvars' if `generate'==1, `vce'
-}	
-	
+}
+else if ("`noproj'"=="noproj"){
+	qui{
+	tempvar auxiliar1
+	mark `auxiliar1' `if' `in'
+	markout `auxiliar1' `varlist'
+	}
+	twowayreg `depvar' `indepvars' if `auxiliar1'==1, `vce'
+	}	
 
 
 /*
