@@ -556,11 +556,8 @@ if ("`folder(`string')'"=="`folder(`string')'"){
 	
   gettoken twoWaynewid aux: varlist
   gettoken twoWaynewt w: aux
-  gen hola=1
-  by twoWaynewid: egen holas=sum(hola)
-  gen nholas=-holas
-  sort nholas
-if("`drop'"=="drop"){
+
+  if("`drop'"=="drop"){
 		if !("`w'"==""){
 		replace `w' = . if `w'<=0
 	}

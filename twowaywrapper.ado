@@ -5,6 +5,8 @@ version 14
 syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) DROP GENerate(name)] [, NEWVars(name) REPLACE NOPROJ] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
 gettoken depvar indepvars : varlist
 
+tempvar touse
+qui gen byte `touse' = e(sample)
 
 if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`drop'"=="drop"){
     twowayset `absorb', drop
