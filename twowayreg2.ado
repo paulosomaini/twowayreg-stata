@@ -1,3 +1,4 @@
+capture program drop twowayregwrap
 capture program drop twowayset
 capture mata mata drop dofadj()
 capture mata mata drop dofadj_l()
@@ -123,7 +124,7 @@ D=.
 newid=st_matrix("twoWaynewid")
 newt=st_matrix("twoWaynewt")
 w = st_local("twoway_w")
-sampleVarName = st_local("auxiliar")
+sampleVarName = st_local("touse_set")
 if (w==""){
 D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
 D = (D,J(rows(D),1,1))
@@ -136,7 +137,6 @@ DH1=sparse(D)
 DD=quadrowsum(DH1)
 HH=quadcolsum(DH1)'
 HH=HH[1..cols(DH1)-1]
-
 DH=DH1[.,1..cols(DH1)-1]
 
 invDD=DD:^-1 
@@ -144,6 +144,7 @@ invHH=HH:^-1
 
 N=colmax(D)[.,1]
 T=colmax(D)[.,2]
+
 st_numscalar("e(H)",N)
 st_numscalar("e(T)",T)
 st_matrix("e(invDD)",invDD)
@@ -177,79 +178,25 @@ if (N<T)
  }
  
  end
-
  
-program define twowayset, rclass
+ 
+
+program define twowayset, eclass sortpreserve
 version 11
-syntax varlist(min=2 max=3) [if] [in], 
+syntax varlist(min=2 max=3) [if] [in]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
 // I need to make it robust to non 1,2,3... ids.
-
-tempvar touse2
-qui gen byte `touse2' = e(sample)
-capture confirm variable auxiliar
-	if !_rc {
-			qui{
-				drop auxiliar
-				mark auxiliar `if' `in'
-				markout auxiliar `varlist'
-
-				tempvar howmany
-				count if auxiliar== 1
-
-				while `r(N)' {
-					bys `twoway_id': gen `howmany' = _N if auxiliar
-					replace auxiliar= 0 if `howmany' == 1
-					drop `howmany'
-
-					bys `twoway_t': gen `howmany' = _N if auxiliar
-					replace auxiliar= 0 if `howmany' == 1
-						
-					count if `howmany' == 1
-					drop `howmany'
-					}              
-			}
-		}	
-    else {
-              qui{
-				mark auxiliar `if' `in'
-				markout auxiliar `varlist'
-
-				tempvar howmany
-				count if auxiliar== 1
-
-				while `r(N)' {
-					bys `twoway_id': gen `howmany' = _N if auxiliar
-					replace auxiliar= 0 if `howmany' == 1
-					drop `howmany'
-
-					bys `twoway_t': gen `howmany' = _N if auxiliar
-					replace auxiliar= 0 if `howmany' == 1
-						
-					count if `howmany' == 1
-					drop `howmany'
-					}
-				}
-		}
-	
-	
-	
-	
-
 	egen twoWaynewid= group(`twoway_id')
 	egen twoWaynewt= group(`twoway_t')
 	local newvars twoWaynewid twoWaynewt
+	if !("`w'"==""){
+	replace `w' = . if `w'<=0
+	}
 	
 
-
-
- 		if !("`w'"==""){
-		replace `w' = . if `w'<=0
-	}
-
-		
+  
 	mata projDummies()
 //di in gr "Checkpoint 1"
 //ret li
@@ -286,7 +233,7 @@ void projVar()
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	newt=st_local("newt")
-	sampleVarName = st_local("auxiliar")
+	sampleVarName = st_local("touse_red")
 	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -348,23 +295,29 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [Prefix(name)] [REPLACE] 
+syntax varlist [if] [in], [Prefix(name)] [REPLACE] 
 	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
- 
 
 
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
 		local newvar="`currvar'"
+			mata projVar()
 		}
 		else {
-		qui gen `newvar'=.
+				capture confirm variable `prefix'`currvar'
+		if !_rc { 
+			}
+			else{
+				qui gen `newvar'=.
+				mata projVar()
+			}
 		}
-	mata projVar()
+
 	
 	}
 
@@ -623,8 +576,7 @@ program define twowayreg, eclass sortpreserve
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	marksample touse
-	tempvar touse2
-	qui gen byte `touse2' = e(sample)
+
 	scalar N= e(H)
 	scalar T= e(T)
 	matrix invDD=e(invDD)
@@ -642,7 +594,7 @@ program define twowayreg, eclass sortpreserve
  
    if ("`robust'"=="robust"){
    	qui{
-  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc robust
+  	regress `depvar' `indepvars' if `touse' , noc robust
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	scalar df_r1= e(df_r) - N - T
     }
@@ -651,7 +603,7 @@ program define twowayreg, eclass sortpreserve
   else if ("`vce_2'"== "vce_2"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse' , noc vce(cluster twoWaynewt)
 	scalar N_1=e(N)
 	scalar df_m= e(df_m)
 	qui{
@@ -666,7 +618,7 @@ program define twowayreg, eclass sortpreserve
    else if ("`vce'"== "vce"){
 
    qui{
-  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse' , noc vce(cluster twoWaynewt)
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
@@ -678,7 +630,7 @@ program define twowayreg, eclass sortpreserve
  
   else{
   qui{
-  	regress `depvar' `indepvars' if `touse' & auxiliar==1, noc
+  	regress `depvar' `indepvars' if `touse' , noc
 	scalar df_r1= e(df_r)-N-T
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	}
@@ -692,7 +644,7 @@ program define twowayreg, eclass sortpreserve
 	matrix V = vadj*e(V)
 
 
-  eret post b V, esample(`touse2')
+  eret post b V
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
   ereturn scalar F= F
@@ -744,21 +696,38 @@ mata st_local("dofadj", strofreal(dofadj_l("`root'",`dof')))
 return scalar dofadj = `dofadj'
 end
 
-capture program drop twowayregwrap
 
 program define twowayregwrap, eclass sortpreserve
 version 14 
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
+syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3)] [, NEWVars(name) REPLACE] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
 gettoken depvar indepvars : varlist
 
 
-if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`noproj'"==""){
+	gettoken twoway_id aux: absorb
+	gettoken twoway_t w: aux
 	qui{
-	tempvar auxiliar1
-	mark `auxiliar1' `if' `in'
-	markout `auxiliar1' `varlist'
-	}
-    twowayset `absorb'
+	tempvar touse_wrap
+	mark `touse_wrap' `if' `in'
+	markout `touse_wrap' `varlist'
+
+	tempvar howmany
+	count if `touse_wrap'== 1
+
+	while `r(N)' {
+			bys `twoway_id': gen `howmany' = _N if `touse_wrap'
+			replace `touse_wrap'= 0 if `howmany' == 1
+			drop `howmany'
+
+			bys `twoway_t': gen `howmany' = _N if `touse_wrap'
+			replace `touse_wrap'= 0 if `howmany' == 1
+						
+			count if `howmany' == 1
+			drop `howmany'
+			}
+	global sample=`touse_wrap'
+	}	
+
+    twowayset `absorb' if `touse_wrap'
 	
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
@@ -766,29 +735,20 @@ if ("`ABSorb('varlist')'"=="`absorb('varlist')'" & "`noproj'"==""){
                  di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* if `auxiliar1'==1, `vce'
+              projvar `depvar' `indepvars' if `touse_wrap', p(`newvars')
+			  twowayreg `newvars'`varlist' if `touse_wrap', `vce'
 			  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars', replace
-		twowayreg `depvar' `indepvars' if `auxiliar1'==1, `vce'
+		projvar `depvar' `indepvars' if `touse_wrap', replace
+		twowayreg `depvar' `indepvars' if `touse_wrap', `vce'
 		
 	}
-}
-else if ("`noproj'"=="noproj"){
-	qui{
-	tempvar auxiliar1
-	mark `auxiliar1' `if' `in'
-	markout `auxiliar1' `varlist'
-	}
-	twowayreg `depvar' `indepvars' if `auxiliar1'==1, `vce'
-	}	
 
-
+drop twoWaynewid twoWaynewt
 /*
 if ("`SAVE'"=="save"){
     twowaysave
