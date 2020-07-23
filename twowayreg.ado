@@ -122,8 +122,8 @@ real scalar N, T
 string scalar newid,newt,w,sampleVarName
 D=.
 
-newid=st_matrix("twoWaynewid")
-newt=st_matrix("twoWaynewt")
+newid=st_local("twoway_id")
+newt=st_local("twoway_t")
 w = st_local("twoway_w")
 sampleVarName = st_local("touse_set")
 if (w==""){
@@ -196,6 +196,26 @@ gettoken twoway_t twoway_w: aux
 	replace `w' = . if `w'<=0
 	}
 	
+	qui{
+	tempvar touse_set
+	mark `touse_set' `if' `in'
+
+
+	tempvar howmany
+	count if `touse_set'== 1
+
+	while `r(N)' {
+			bys `twoway_id': gen `howmany' = _N if `touse_set'
+			replace `touse_set'= 0 if `howmany' == 1
+			drop `howmany'
+
+			bys `twoway_t': gen `howmany' = _N if `touse_set'
+			replace `touse_set'= 0 if `howmany' == 1
+						
+			count if `howmany' == 1
+			drop `howmany'
+			}
+	}	
 
   
 	mata projDummies()
@@ -209,9 +229,6 @@ gettoken twoway_t twoway_w: aux
 //return post r(B), esample(`twoway_sample') 
 //obs(`nobs') dof(`dof')
 
-	
-
-
 
 end
 
@@ -224,7 +241,7 @@ mata
 void projVar()
 {
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
-	real colvector invHH,invDD,Dy,Ty
+	real colvector invHH,invDD,Dy,Ty, linear_index
 	real scalar N,T
 	string scalar newid, newt, currvar,newvar,sampleVarName,w
 	currvar = st_local("currvar")
@@ -234,7 +251,7 @@ void projVar()
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	newt=st_local("newt")
-	sampleVarName = st_local("touse_red")
+	sampleVarName = st_local("touse_proj")
 	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -287,7 +304,8 @@ void projVar()
 	varOut=(varIn-delta[V[.,1]]-tau[V[.,2]]):*sqrt(D[.,3])
 	//printf("4")
 	//st_matrix("DD2",B)
-	st_store(., newvar, varOut)
+	linear_index = st_data(.,("linear_index"),sampleVarName)
+	st_store(linear_index, newvar, varOut)
 	//printf("5")
 }
 end
@@ -296,13 +314,38 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist [if] [in], [Prefix(name)] [REPLACE] 
+syntax varlist [if] [in], [ABSorb(varlist)] [Prefix(name)] [REPLACE] 
 	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
+	
+	gettoken twoway_id aux: absorb
+	gettoken twoway_t twoway_w: aux
 
+	
+	qui{
+	tempvar touse_proj
+	mark `touse_proj' `if' `in'
 
+	tempvar howmany
+	count if `touse_proj'== 1
+
+	while `r(N)' {
+			bys `twoway_id': gen `howmany' = _N if `touse_proj'
+			replace `touse_proj'= 0 if `howmany' == 1
+			drop `howmany'
+
+			bys `twoway_t': gen `howmany' = _N if `touse_proj'
+			replace `touse_proj'= 0 if `howmany' == 1
+						
+			count if `howmany' == 1
+			drop `howmany'
+			}
+	}	
+	
+	gen linear_index = _n	
+	
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
@@ -322,7 +365,7 @@ syntax varlist [if] [in], [Prefix(name)] [REPLACE]
 	
 	}
 
-
+drop linear_index
 scalar N= e(H)
 scalar T= e(T)
 matrix invDD=e(invDD)
@@ -572,7 +615,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 14
  
-    syntax varlist(numeric ts fv) [if] [in],[ABSorb(varlist)] [,ROBUST VCE VCE_2] 
+    syntax varlist(numeric ts fv) [if] [in],[,ROBUST VCE VCE_2] 
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
@@ -582,24 +625,7 @@ program define twowayreg, eclass sortpreserve
 	qui{
 	tempvar touse_reg
 	mark `touse_reg' `if' `in'
-	markout `touse_reg' `varlist'
-
-	tempvar howmany
-	count if `touse_reg'== 1
-
-	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_reg'
-			replace `touse_reg'= 0 if `howmany' == 1
-			drop `howmany'
-
-			bys `twoway_t': gen `howmany' = _N if `touse_reg'
-			replace `touse_reg'= 0 if `howmany' == 1
-						
-			count if `howmany' == 1
-			drop `howmany'
-			}
-	}	
-	
+	}
 	scalar N= e(H)
 	scalar T= e(T)
 	matrix invDD=e(invDD)
@@ -767,28 +793,11 @@ syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) NOPROJ] [
 gettoken depvar indepvars : varlist
 
 
-	gettoken twoway_id aux: absorb
-	gettoken twoway_t w: aux
 	qui{
 	tempvar touse_wrap
 	mark `touse_wrap' `if' `in'
 	markout `touse_wrap' `varlist'
-
-	tempvar howmany
-	count if `touse_wrap'== 1
-
-	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_wrap'
-			replace `touse_wrap'= 0 if `howmany' == 1
-			drop `howmany'
-
-			bys `twoway_t': gen `howmany' = _N if `touse_wrap'
-			replace `touse_wrap'= 0 if `howmany' == 1
-						
-			count if `howmany' == 1
-			drop `howmany'
-			}
-	}	
+	}
 
 if ("`noproj'"==""){
 	twowayset `absorb' if `touse_wrap'
@@ -799,16 +808,16 @@ if ("`noproj'"==""){
                  di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars' if `touse_wrap', p(`newvars')
-			  twowayreg `newvars'* if `touse_wrap', abs(`absorb') `vce'
+              projvar `depvar' `indepvars' if `touse_wrap',abs(`absorb') p(`newvars')
+			  twowayreg `newvars'* if `touse_wrap', `vce'
 			  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars' if `touse_wrap', replace
-		twowayreg `depvar' `indepvars' if `touse_wrap', abs(`absorb') `vce'
+		projvar `depvar' `indepvars' if `touse_wrap', abs(`absorb') replace
+		twowayreg `depvar' `indepvars' if `touse_wrap', `vce'
 		
 	}
 }	
@@ -819,7 +828,7 @@ else if ("`noproj'"=="noproj"){
 	egen twoWaynewid= group(`twoway_id')
 	egen twoWaynewt= group(`twoway_t')
 	
-	twowayreg `depvar' `indepvars' if `touse_wrap',abs(`absorb') `vce'
+	twowayreg `depvar' `indepvars' if `touse_wrap', `vce'
 }
 drop twoWaynewid twoWaynewt
 
