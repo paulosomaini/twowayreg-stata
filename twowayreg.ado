@@ -189,6 +189,8 @@ gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
 // I need to make it robust to non 1,2,3... ids.
+
+
 	egen twoWaynewid= group(`twoway_id')
 	egen twoWaynewt= group(`twoway_t')
 	local newvars twoWaynewid twoWaynewt
@@ -215,11 +217,19 @@ gettoken twoway_t twoway_w: aux
 			count if `howmany' == 1
 			drop `howmany'
 			}
+	tempvar touse_set2
+	gen `touse_set2'= `touse_set'
 	}	
-
-  
+	
+	ereturn post, esample(`touse_set2')
+	/*
+	[Gen(names)]- for new names-- if gen!="" {group(name`1',name`2')} else{check consecutive}
+	check consecutive numbers.
+	*/
 	mata projDummies()
-//di in gr "Checkpoint 1"
+	drop `touse_set'
+	
+	//di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
 	scalar twoWayw="`twoway_w'"
@@ -314,35 +324,29 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist [if] [in], [ABSorb(varlist)] [Prefix(name)] [REPLACE] 
+syntax varlist,  [Prefix(name)] [REPLACE] 
 	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	
-	gettoken twoway_id aux: absorb
-	gettoken twoway_t twoway_w: aux
-
 	
 	qui{
 	tempvar touse_proj
-	mark `touse_proj' `if' `in'
-
-	tempvar howmany
-	count if `touse_proj'== 1
-
-	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_proj'
-			replace `touse_proj'= 0 if `howmany' == 1
-			drop `howmany'
-
-			bys `twoway_t': gen `howmany' = _N if `touse_proj'
-			replace `touse_proj'= 0 if `howmany' == 1
-						
-			count if `howmany' == 1
-			drop `howmany'
-			}
-	}	
+	gen byte `touse_proj'= e(sample)
+	tempvar  touse_check 
+	gen byte `touse_check'  =  `touse_proj'
+	markout `touse_check'  `varlist'   
+	capture assert  `touse_proj' ==  `touse_check' 
+	local rc = _rc
+	}
+	if `rc' {
+		  di "{err} Some of the included variables have missing values."
+	   exit `rc'
+	}
+	drop `touse_check'
+	
+	
 	
 	gen linear_index = _n	
 	
@@ -625,6 +629,7 @@ program define twowayreg, eclass sortpreserve
 	qui{
 	tempvar touse_reg
 	mark `touse_reg' `if' `in'
+	replace `touse_reg'= `touse_reg' & e(sample)
 	}
 	scalar N= e(H)
 	scalar T= e(T)
@@ -693,7 +698,7 @@ program define twowayreg, eclass sortpreserve
 	matrix V = vadj*e(V)
 
 
-  eret post b V
+  eret post b V, esample(`touse_reg')
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
   ereturn scalar F= F
@@ -805,10 +810,10 @@ if ("`noproj'"==""){
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
 		if !_rc {
-                 di in red "There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+                 di in red "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars' if `touse_wrap',abs(`absorb') p(`newvars')
+              projvar `depvar' `indepvars', p(`newvars')
 			  twowayreg `newvars'* if `touse_wrap', `vce'
 			  }
 				
@@ -816,7 +821,7 @@ if ("`noproj'"==""){
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars' if `touse_wrap', abs(`absorb') replace
+		projvar `depvar' `indepvars' , replace
 		twowayreg `depvar' `indepvars' if `touse_wrap', `vce'
 		
 	}
