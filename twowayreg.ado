@@ -122,12 +122,12 @@ real scalar N, T
 string scalar newid,newt,w,sampleVarName
 D=.
 
-newid=st_local("twoway_id")
-newt=st_local("twoway_t")
+newid=st_local("var1")
+newt=st_local("var2")
 w = st_local("twoway_w")
 sampleVarName = st_local("touse_set")
 if (w==""){
-D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
+D = st_data(.,(newid,newt),sampleVarName)
 D = (D,J(rows(D),1,1))
 }
 else {
@@ -184,16 +184,14 @@ if (N<T)
 
 program define twowayset, eclass sortpreserve
 version 11
-syntax varlist(min=2 max=3) [if] [in]
+syntax varlist(min=2 max=3) [if] [in], [GENerate(namelist) Nogen]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
 // I need to make it robust to non 1,2,3... ids.
 
 
-	egen twoWaynewid= group(`twoway_id')
-	egen twoWaynewt= group(`twoway_t')
-	local newvars twoWaynewid twoWaynewt
+
 	if !("`w'"==""){
 	replace `w' = . if `w'<=0
 	}
@@ -222,6 +220,30 @@ gettoken twoway_t twoway_w: aux
 	}	
 	
 	ereturn post, esample(`touse_set2')
+	
+	if ("`nogen'"=="nogen"){
+		sort `twoway_id' `twoway_t'
+		tempvar check1
+		gen `check1'=ExperimentID[_n]-ExperimentID[_n-1]
+		capture assert `check1'>1 
+		local rc = _rc
+		if `rc'{
+			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
+			exit `rc'
+		} 
+
+		tempvar var1
+		gen `var1'= `twoway_id'
+		tempvar var2
+		gen `var2'= `twoway_t'
+	}
+	
+	else{
+		gettoken var1 var2: generate
+		egen `var1'= group(`twoway_id')
+		egen `var2'= group(`twoway_t')
+		}
+		
 	/*
 	[Gen(names)]- for new names-- if gen!="" {group(name`1',name`2')} else{check consecutive}
 	check consecutive numbers.
@@ -232,6 +254,8 @@ gettoken twoway_t twoway_w: aux
 	//di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
+	scalar twoWaynewid= `var1'
+	scalar twoWaynewt= `var2'
 	scalar twoWayw="`twoway_w'"
 	scalar twoWayif="`if'"
 	scalar twoWayin="`in'"
@@ -256,21 +280,21 @@ void projVar()
 	string scalar newid, newt, currvar,newvar,sampleVarName,w
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
-	newid=st_local("newid")
+	newid=st_local("var1")
 	N=st_numscalar("e(H)")
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
-	newt=st_local("newt")
+	newt=st_local("var2")
 	sampleVarName = st_local("touse_proj")
-	V = st_data(.,("twoWaynewid","twoWaynewt",currvar),sampleVarName)
+	V = st_data(.,(newid, newt,currvar),sampleVarName)
 	varIn=V[.,3]
 	
 	if (w==""){
-	D = st_data(.,("twoWaynewid","twoWaynewt"),sampleVarName)
+	D = st_data(.,(newid, newt),sampleVarName)
 	D = (D,J(rows(D),1,1))
 	}
 	else {
-	D = st_data(.,("twoWaynewid","twoWaynewt",w),sampleVarName)
+	D = st_data(.,(newid, newt,w),sampleVarName)
 	}
 	
 	V[.,3]=V[.,3]:*D[.,3]
@@ -324,7 +348,7 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist,  [Prefix(name)] [REPLACE] 
+syntax varlist, [ABSorb(varlist)] [Prefix(name)] [REPLACE] 
 	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
@@ -349,7 +373,7 @@ syntax varlist,  [Prefix(name)] [REPLACE]
 	
 	
 	gen linear_index = _n	
-	
+	gettoken var1 var2: absorb
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
@@ -620,6 +644,7 @@ program define twowayreg, eclass sortpreserve
     version 14
  
     syntax varlist(numeric ts fv) [if] [in],[,ROBUST VCE VCE_2] 
+	*regress `depvar' `indepvars' if `touse_reg' , noc vce(`vce')
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
@@ -810,7 +835,7 @@ if ("`noproj'"==""){
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
 		if !_rc {
-                 di in red "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+                 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
               projvar `depvar' `indepvars', p(`newvars')
