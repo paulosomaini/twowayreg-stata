@@ -820,7 +820,7 @@ end
 
 program define twowayregwrap, eclass sortpreserve
 version 14 
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(name)] [, SAVE rootsave(name) foldersave(string)]
+syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof] [, SAVE rootsave(name) foldersave(string)]
 gettoken depvar indepvars : varlist
 
 
@@ -829,9 +829,9 @@ gettoken depvar indepvars : varlist
 	mark `touse_wrap' `if' `in'
 	markout `touse_wrap' `varlist'
 	}
-
-if ("`noproj'"==""){
-	twowayset `absorb' if `touse_wrap'
+	gettoken twoway_new_id twoway_new_t : generate
+if ("`noproj'"=="" & "`nogen'"=="nogen"){
+	twowayset `absorb' if `touse_wrap', nogen
 	
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
@@ -839,16 +839,38 @@ if ("`noproj'"==""){
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* if `touse_wrap', `vce'
+              projvar `depvar' `indepvars', abs(`twoway_new_id' `twoway_new_t') p(`newvars')
+			  twowayreg `newvars'* if `touse_wrap', vce(`vce') `statadof'
 			  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars' , replace
-		twowayreg `depvar' `indepvars' if `touse_wrap', `vce'
+		projvar `depvar' `indepvars' ,abs(`twoway_new_id' `twoway_new_t') replace
+		twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
+		
+	}
+}	
+if ("`noproj'"=="" & "`nogen'"==""){
+	twowayset `absorb' if `touse_wrap', gen(`generate')
+	
+	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
+		capture confirm variable `newvars'
+		if !_rc {
+                 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+				}
+        else {
+              projvar `depvar' `indepvars', abs(`twoway_new_id' `twoway_new_t') p(`newvars')
+			  twowayreg `newvars'* if `touse_wrap', vce(`vce') `statadof'
+			  }
+				
+	}
+		
+		
+	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
+		projvar `depvar' `indepvars', abs(`twoway_new_id' `twoway_new_t') replace
+		twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
 		
 	}
 }	
@@ -856,12 +878,11 @@ if ("`noproj'"==""){
 else if ("`noproj'"=="noproj"){
 	gettoken twoway_id aux: absorb
 	gettoken twoway_t w: aux
-	egen twoWaynewid= group(`twoway_id')
-	egen twoWaynewt= group(`twoway_t')
+
 	
-	twowayreg `depvar' `indepvars' if `touse_wrap', `vce'
+	twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
 }
-drop twoWaynewid twoWaynewt
+
 
 /*
 if ("`SAVE'"=="save"){
