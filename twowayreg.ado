@@ -223,10 +223,13 @@ gettoken twoway_t twoway_w: aux
 	
 	if ("`nogen'"=="nogen"){
 		sort `twoway_id' `twoway_t'
-		tempvar check1
-		gen `check1'=ExperimentID[_n]-ExperimentID[_n-1]
-		capture assert `check1'>1 
-		local rc = _rc
+		qui{
+			tempvar check1
+			gen `check1'=`twoway_id'[_n]-`twoway_id'[_n-1]
+			replace `check1'=1 if _n==1
+			capture assert `check1'<=1 
+			local rc = _rc
+		}
 		if `rc'{
 			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
 			exit `rc'
@@ -643,8 +646,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 14
  
-    syntax varlist(numeric ts fv) [if] [in],[,ROBUST VCE VCE_2] 
-	*regress `depvar' `indepvars' if `touse_reg' , noc vce(`vce')
+    syntax varlist(numeric ts fv) [if] [in],[,ROBUST VCE(namelist) statadof] 
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
@@ -678,11 +680,22 @@ program define twowayreg, eclass sortpreserve
 	scalar df_r1= e(df_r) - N - T
     }
  }
- 
-  else if ("`vce_2'"== "vce_2"){
+    else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== ""){
 
    qui{
-  	regress `depvar' `indepvars' if `touse_reg' , noc vce(cluster twoWaynewt)
+  	regress `depvar' `indepvars' if `touse_reg' , noc vce(`vce')
+	qui{
+		scalar df_r= e(N)-e(df_m)-1
+	}
+	scalar df_r1= e(df_r)
+	scalar vadj = df_r/(df_r- N - T)
+	    }
+ }
+
+  else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== "statadof"){
+
+   qui{
+  	regress `depvar' `indepvars' if `touse_reg' , noc vce(`vce')
 	scalar N_1=e(N)
 	scalar df_m= e(df_m)
 	qui{
@@ -692,20 +705,8 @@ program define twowayreg, eclass sortpreserve
 	scalar vadj = (N_1-1)*(df_r/(df_r - 1))/(N_1 - df_m - 1)
 	    }
 
- }
-
-   else if ("`vce'"== "vce"){
-
-   qui{
-  	regress `depvar' `indepvars' if `touse_reg' , noc vce(cluster twoWaynewt)
-	qui{
-		scalar df_r= e(N)-e(df_m)-1
-	}
-	scalar df_r1= e(df_r)
-	scalar vadj = df_r/(df_r- N - T)
-	    }
- }
-
+ 
+}
  
   else{
   qui{
