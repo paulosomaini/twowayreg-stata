@@ -253,7 +253,9 @@ gettoken twoway_t twoway_w: aux
 	*/
 	mata projDummies()
 	drop `touse_set'
-	
+	global var1 "`var1'"
+	global var2 "`var2'"
+	ereturn local absorb "`var1'" "`var2'"
 	//di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
@@ -283,21 +285,19 @@ void projVar()
 	string scalar newid, newt, currvar,newvar,sampleVarName,w
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
-	newid=st_local("var1")
 	N=st_numscalar("e(H)")
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
-	newt=st_local("var2")
 	sampleVarName = st_local("touse_proj")
-	V = st_data(.,(newid, newt,currvar),sampleVarName)
+	V = st_data(.,("$var1", "$var2",currvar),sampleVarName)
 	varIn=V[.,3]
 	
 	if (w==""){
-	D = st_data(.,(newid, newt),sampleVarName)
+	D = st_data(.,("$var1", "$var2"),sampleVarName)
 	D = (D,J(rows(D),1,1))
 	}
 	else {
-	D = st_data(.,(newid, newt,w),sampleVarName)
+	D = st_data(.,("$var1", "$var2",w),sampleVarName)
 	}
 	
 	V[.,3]=V[.,3]:*D[.,3]
@@ -351,7 +351,7 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [ABSorb(varlist)] [Prefix(name)] [REPLACE] 
+syntax varlist, [Prefix(name)] [REPLACE] 
 	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
@@ -376,7 +376,7 @@ syntax varlist, [ABSorb(varlist)] [Prefix(name)] [REPLACE]
 	
 	
 	gen linear_index = _n	
-	gettoken var1 var2: absorb
+	
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
@@ -829,17 +829,16 @@ gettoken depvar indepvars : varlist
 	mark `touse_wrap' `if' `in'
 	markout `touse_wrap' `varlist'
 	}
-	gettoken twoway_new_id twoway_new_t : generate
 if ("`noproj'"=="" & "`nogen'"=="nogen"){
 	twowayset `absorb' if `touse_wrap', nogen
-	
+	gettoken twoway_id twoway_t : absorb
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
 		if !_rc {
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars', abs(`twoway_new_id' `twoway_new_t') p(`newvars')
+              projvar `depvar' `indepvars', p(`newvars')
 			  twowayreg `newvars'* if `touse_wrap', vce(`vce') `statadof'
 			  }
 				
@@ -847,21 +846,22 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars' ,abs(`twoway_new_id' `twoway_new_t') replace
+		projvar `depvar' `indepvars' , replace
 		twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
 		
 	}
 }	
 if ("`noproj'"=="" & "`nogen'"==""){
 	twowayset `absorb' if `touse_wrap', gen(`generate')
-	
+	gettoken twoway_new_id twoway_new_t : generate
+
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
 		if !_rc {
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars', abs(`twoway_new_id' `twoway_new_t') p(`newvars')
+              projvar `depvar' `indepvars', p(`newvars')
 			  twowayreg `newvars'* if `touse_wrap', vce(`vce') `statadof'
 			  }
 				
@@ -869,7 +869,7 @@ if ("`noproj'"=="" & "`nogen'"==""){
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars', abs(`twoway_new_id' `twoway_new_t') replace
+		projvar `depvar' `indepvars', replace
 		twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
 		
 	}
