@@ -184,7 +184,7 @@ if (N<T)
 
 program define twowayset, eclass sortpreserve
 version 11
-syntax varlist(min=2 max=3) [if] [in], [GENerate(namelist) Nogen]
+syntax varlist(min=2 max=3) [if] [in], [GENerate(namelist min=2 max=2) Nogen]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 //summ `varlist'
