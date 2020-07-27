@@ -68,7 +68,6 @@ drop w_*
 }
 
 save Example2.dta,replace 
-drop twoWaynewid twoWaynewt
 clear all
 do twowayreg.ado
 use Example2.dta

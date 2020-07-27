@@ -234,6 +234,10 @@ gettoken twoway_t twoway_w: aux
 			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
 			exit `rc'
 		} 
+		tempvar var1 var2
+		gen `var1'= `twoway_id'
+		gen `var2'= `twoway_t'
+
 		ereturn local absorb "`twoway_id' `twoway_t'"
 
 	}
@@ -251,7 +255,6 @@ gettoken twoway_t twoway_w: aux
 	*/
 	mata projDummies()
 	drop `touse_set'
-	ereturn local absorb "`var1' `var2'"
 	
 	
 	//di in gr "Checkpoint 1"
