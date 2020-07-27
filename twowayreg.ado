@@ -649,7 +649,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 14
  
-    syntax varlist(numeric ts fv) [if] [in],[,ROBUST VCE(namelist) statadof] 
+    syntax varlist(numeric ts fv),[,ROBUST VCE(namelist) statadof] 
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
@@ -658,8 +658,7 @@ program define twowayreg, eclass sortpreserve
 	gettoken twoway_t w: aux
 	qui{
 	tempvar touse_reg
-	mark `touse_reg' `if' `in'
-	replace `touse_reg'= `touse_reg' & e(sample)
+	gen byte `touse_reg'= e(sample)
 	}
 	scalar N= e(H)
 	scalar T= e(T)
@@ -677,16 +676,17 @@ program define twowayreg, eclass sortpreserve
 	}
  
    if ("`robust'"=="robust"){
+   *standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation    
    	qui{
-  	regress `depvar' `indepvars' if `touse_reg' , noc robust
+  	regress `depvar' `indepvars' , noc robust
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	scalar df_r1= e(df_r) - N - T
     }
  }
     else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== ""){
-
+	*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
    qui{
-  	regress `depvar' `indepvars' if `touse_reg' , noc vce(`vce')
+  	regress `depvar' `indepvars'  , noc vce(`vce')
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
@@ -696,9 +696,9 @@ program define twowayreg, eclass sortpreserve
  }
 
   else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== "statadof"){
-
+	*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
    qui{
-  	regress `depvar' `indepvars' if `touse_reg' , noc vce(`vce')
+  	regress `depvar' `indepvars' , noc vce(`vce')
 	scalar N_1=e(N)
 	scalar df_m= e(df_m)
 	qui{
@@ -712,8 +712,9 @@ program define twowayreg, eclass sortpreserve
 }
  
   else{
+     *standard errors assuming homoscedasticity and no within  group correlation or serial correlation
   qui{
-  	regress `depvar' `indepvars' if `touse_reg' , noc
+  	regress `depvar' `indepvars'  , noc
 	scalar df_r1= e(df_r)-N-T
 	scalar vadj = e(df_r)/(e(df_r)- N - T)
 	}
@@ -842,7 +843,7 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 				}
         else {
               projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* if `touse_wrap', vce(`vce') `statadof'
+			  twowayreg `newvars'* , vce(`vce') `statadof'
 			  }
 				
 	}
@@ -850,7 +851,7 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		projvar `depvar' `indepvars' , replace
-		twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
+		twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
 		
 	}
 }	
@@ -865,7 +866,7 @@ if ("`noproj'"=="" & "`nogen'"==""){
 				}
         else {
               projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* if `touse_wrap', vce(`vce') `statadof'
+			  twowayreg `newvars'* , vce(`vce') `statadof'
 			  }
 				
 	}
@@ -883,7 +884,7 @@ else if ("`noproj'"=="noproj"){
 	gettoken twoway_t w: aux
 
 	
-	twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
+	twowayreg `depvar' `indepvars', vce(`vce') `statadof'
 }
 
 
