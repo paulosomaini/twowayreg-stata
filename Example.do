@@ -57,10 +57,10 @@ forvalues var = 1/`vars' {
 
 *** 2) Run Our procedure
 twowayset hid tid, nogen
-projvar y x*, abs(hid tid) p(w_)
+projvar y x*,p(w_)
 twowayreg w_y w_x* , robust
 
-drop w_*
+drop w_* 
 
 }
 }
@@ -68,12 +68,12 @@ drop w_*
 }
 
 save Example2.dta,replace 
-
+drop twoWaynewid twoWaynewt
 clear all
 do twowayreg.ado
 use Example2.dta
 *** 2) Run Our procedure
-twowayload hid tid
+twowayset hid tid, nogen
 projvar y x*, p(w_)
 twowayreg w_y w_x*, robust
 

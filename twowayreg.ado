@@ -235,16 +235,22 @@ gettoken twoway_t twoway_w: aux
 			exit `rc'
 		} 
 
+		global var1 `twoway_id'
+		global var2 `twoway_t'
+		
 		tempvar var1
 		gen `var1'= `twoway_id'
 		tempvar var2
 		gen `var2'= `twoway_t'
+
 	}
 	
 	else{
 		gettoken var1 var2: generate
 		egen `var1'= group(`twoway_id')
 		egen `var2'= group(`twoway_t')
+		global var1 "`var1'"
+		global var2 "`var2'"
 		}
 		
 	/*
@@ -253,9 +259,9 @@ gettoken twoway_t twoway_w: aux
 	*/
 	mata projDummies()
 	drop `touse_set'
-	global var1 "`var1'"
-	global var2 "`var2'"
 	ereturn local absorb "`var1'" "`var2'"
+	
+	
 	//di in gr "Checkpoint 1"
 //ret li
 //di in gr "Checkpoint 2"
