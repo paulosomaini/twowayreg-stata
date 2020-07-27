@@ -286,15 +286,16 @@ mata
 void projVar()
 {
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
-	real colvector invHH,invDD,Dy,Ty, linear_index
+	real colvector invHH,invDD,Dy,Ty
 	real scalar N,T
-	string scalar newid, newt, currvar,newvar,sampleVarName,w
+	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
 	N=st_numscalar("e(H)")
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	sampleVarName = st_local("touse_proj")
+	linear_index = st_local("linear_index")
 	V = st_data(.,("$var1", "$var2",currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -347,8 +348,7 @@ void projVar()
 	varOut=(varIn-delta[V[.,1]]-tau[V[.,2]]):*sqrt(D[.,3])
 	//printf("4")
 	//st_matrix("DD2",B)
-	linear_index = st_data(.,("linear_index"),sampleVarName)
-	st_store(linear_index, newvar, varOut)
+	st_store(st_data(.,linear_index,sampleVarName), newvar, varOut)
 	//printf("5")
 }
 end
@@ -365,9 +365,8 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	
 	
 	qui{
-	tempvar touse_proj
+	tempvar touse_proj touse_check linear_index
 	gen byte `touse_proj'= e(sample)
-	tempvar  touse_check 
 	gen byte `touse_check'  =  `touse_proj'
 	markout `touse_check'  `varlist'   
 	capture assert  `touse_proj' ==  `touse_check' 
@@ -381,7 +380,7 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	
 	
 	
-	gen linear_index = _n	
+	gen `linear_index' = _n	
 	
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
@@ -402,7 +401,7 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	
 	}
 
-drop linear_index
+drop `linear_index'
 scalar N= e(H)
 scalar T= e(T)
 matrix invDD=e(invDD)
@@ -906,4 +905,6 @@ else if ("`foldersave(`string')'"=="`foldersave(`string')'"){
 */
 
 
-end 
+end
+
+** End of twowayreg.ado
