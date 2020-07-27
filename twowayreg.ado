@@ -234,14 +234,7 @@ gettoken twoway_t twoway_w: aux
 			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
 			exit `rc'
 		} 
-
-		global var1 `twoway_id'
-		global var2 `twoway_t'
-		
-		tempvar var1
-		gen `var1'= `twoway_id'
-		tempvar var2
-		gen `var2'= `twoway_t'
+		ereturn local absorb "`twoway_id' `twoway_t'"
 
 	}
 	
@@ -249,8 +242,7 @@ gettoken twoway_t twoway_w: aux
 		gettoken var1 var2: generate
 		egen `var1'= group(`twoway_id')
 		egen `var2'= group(`twoway_t')
-		global var1 "`var1'"
-		global var2 "`var2'"
+		ereturn local absorb "`var1' `var2'"
 		}
 		
 	/*
@@ -259,7 +251,7 @@ gettoken twoway_t twoway_w: aux
 	*/
 	mata projDummies()
 	drop `touse_set'
-	ereturn local absorb "`var1'" "`var2'"
+	ereturn local absorb "`var1' `var2'"
 	
 	
 	//di in gr "Checkpoint 1"
@@ -288,23 +280,25 @@ void projVar()
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
 	real colvector invHH,invDD,Dy,Ty
 	real scalar N,T
-	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index
+	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
+	var1 = st_local("var1")
+	var2 = st_local("var2")
 	N=st_numscalar("e(H)")
 	T=st_numscalar("e(T)")
 	w=st_strscalar("twoWayw")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
-	V = st_data(.,("$var1", "$var2",currvar),sampleVarName)
+	V = st_data(.,(var1, var2,currvar),sampleVarName)
 	varIn=V[.,3]
 	
 	if (w==""){
-	D = st_data(.,("$var1", "$var2"),sampleVarName)
+	D = st_data(.,(var1, var2),sampleVarName)
 	D = (D,J(rows(D),1,1))
 	}
 	else {
-	D = st_data(.,("$var1", "$var2",w),sampleVarName)
+	D = st_data(.,(var1, var2,w),sampleVarName)
 	}
 	
 	V[.,3]=V[.,3]:*D[.,3]
@@ -357,8 +351,9 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [Prefix(name)] [REPLACE] 
-	
+syntax varlist, [Prefix(name)] [REPLACE]
+	local absorb = "`e(absorb)'"
+	gettoken var1 var2 : absorb
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
