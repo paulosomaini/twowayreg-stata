@@ -249,10 +249,6 @@ gettoken twoway_t twoway_w: aux
 		ereturn local absorb "`var1' `var2'"
 		}
 		
-	/*
-	[Gen(names)]- for new names-- if gen!="" {group(name`1',name`2')} else{check consecutive}
-	check consecutive numbers.
-	*/
 	mata projDummies()
 	drop `touse_set'
 	
@@ -354,9 +350,16 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [Prefix(name)] [REPLACE]
-	local absorb = "`e(absorb)'"
+syntax varlist, [ABSorb(varlist)] [Prefix(name)] [REPLACE]
+	
+	if("`absorb(`varlist')'"=="`absorb(`varlist')'"){
+		gettoken var1 var2 : absorb
+	}
+	else if ("`absorb(`varlist')'"==""){
+		local absorb = "`e(absorb)'"
 	gettoken var1 var2 : absorb
+	
+	}
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
@@ -401,10 +404,10 @@ syntax varlist, [Prefix(name)] [REPLACE]
 
 drop `linear_index'
 scalar N= e(H)
-scalar T= e(T)
+scalar Tid= e(T)
 matrix invDD=e(invDD)
 matrix invHH=e(invHH)
-if (N<T){
+if (N<Tid){
 	matrix CinvHHDH=e(CinvHHDH)
 	matrix A= e(A)
 	matrix B=e(B)
@@ -429,9 +432,9 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
-root =st_local("root")
+root =st_local("using")
 N=st_numscalar("N")
-T=st_numscalar("T")
+T=st_numscalar("Tid")
 invDD=st_matrix("invDD")
 invHH=st_matrix("invHH") 
 saveMat(root,"twoWayN1", N)
@@ -439,7 +442,7 @@ saveMat(root,"twoWayN2", T)
 saveMat(root,"twoWayInvDD", invDD)
 saveMat(root,"twoWayInvHH", invHH)
 
-//st_matrix("twoWayD", D...)
+
  if (N<T)
 		{
         CinvHHDH=st_matrix("CinvHHDH")
@@ -469,28 +472,27 @@ saveMat(root,"twoWayInvHH", invHH)
 end
 
 
-program define twowaysave, rclass
+program define twowaysave, eclass
 version 11
-syntax  [if] [in] [, FOLDER(string)] [Root(name)]
+syntax [using/]
 
-if ("`folder(`string')'"=="`folder(`string')'"){
-	cd "`folder'"
+scalar N= e(H)
+scalar Tid=e(Tid)
+matrix invDD=e(invDD)
+matrix invHH=e(invHH)
+
+if (N<Tid){
+	matrix CinvHHDH=e(CinvHHDH)
+	matrix A= e(A)
+	matrix B=e(B)
+}
+else {
+	matrix AinvDDDH=e(AinvDDDH)
+	matrix C= e(C)
+	matrix B=e(B)
 }
 
-	tempvar twoway_sample
-	mark `twoway_sample' `if' `in'
-	markout `twoway_sample' `varlist'
 	mata projDummies_save()
-	scalar twoWayid="`twoway_id'"
-	scalar twoWayt="`twoway_t'"
-	scalar twoWayw="`twoway_w'"
-	scalar twoWayif="`if'"
-	scalar twoWayin="`in'"
-
-
-	
-drop twoWaynewid
-drop twoWaynewt
 
 end
 
@@ -505,9 +507,8 @@ real colvector  invDD, invHH
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
-root =st_local("root")
+root =st_local("using")
 w = st_local("twoway_w")
-sampleVarName = st_local("twoway_sample")
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
 invDD=readMat(root,"twoWayInvDD")
@@ -544,127 +545,65 @@ st_matrix("e(invHH)",invHH)
 end
 
 
-program define twowayload, rclass
+program define twowayload, eclass
 version 11
-syntax varlist(min=2 max=3) [if] [in],[, FOLDER(string)] [,DROP] [,Generate(name)] [Replace] [Root(name)] 
+syntax varlist(min=2 max=3)[if] [in],[using(name)] [GENerate(namelist min=2 max=2) Nogen]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
-
-if ("`folder(`string')'"=="`folder(`string')'"){
-	cd "`folder'"
-}
-//summ `varlist'
-// I need to make it robust to non 1,2,3... ids.
-
-
-	egen twoWaynewid= group(`twoway_id')
-	egen twoWaynewt= group(`twoway_t')
-	local newvars twoWaynewid twoWaynewt
-
 	tempvar twoway_sample
 	mark `twoway_sample' `if' `in'
-	markout `twoway_sample' `newvars'
 
+	if ("`nogen'"=="nogen"){
+		sort `twoway_id' `twoway_t'
+		qui{
+			tempvar check1
+			gen `check1'=`twoway_id'[_n]-`twoway_id'[_n-1]
+			replace `check1'=1 if _n==1
+			capture assert `check1'<=1 
+			local rc = _rc
+		}
+		if `rc'{
+			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
+			exit `rc'
+		} 
+		tempvar var1 var2
+		gen `var1'= `twoway_id'
+		gen `var2'= `twoway_t'
 
+		ereturn local absorb "`twoway_id' `twoway_t'"
 
-	mata projDummies_load()
-//di in gr "Checkpoint 1"
-//ret li
-//di in gr "Checkpoint 2"
-	scalar twoWayw="`twoway_w'"
-	scalar twoWayif="`if'"
-	scalar twoWayin="`in'"
-	
-  gettoken twoWaynewid aux: varlist
-  gettoken twoWaynewt w: aux
-
-  if("`drop'"=="drop"){
-		if !("`w'"==""){
-		replace `w' = . if `w'<=0
 	}
 	
-	qui{
-	gen aux=1
-	
-	tempvar howmany
-	count if aux == 1
+	else{
+		gettoken var1 var2: generate
+		egen `var1'= group(`twoway_id')
+		egen `var2'= group(`twoway_t')
+		ereturn local absorb "`var1' `var2'"
+		}
 
-	while `r(N)' {
-	bys `twoWaynewid': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
-	drop `howmany'
-
-	bys `twoWaynewt': gen `howmany' = _N if aux
-	replace aux = 0 if `howmany' == 1
-		
-	count if `howmany' == 1
-	drop `howmany'
-	drop if aux!=1
-	drop aux
-	}
-	}
-
-	
-}	
-	
-else if ("`drop'"!="drop") {
-    qui{
-	if ("`replace'"=="replace") {
-		cap drop `generate'
-	}
-
-	if !("`w'"==""){
-		replace `w' = . if `w'<=0
-	}
-
-
-	mark `generate' `if' `in'
-	markout `generate' `varlist'
-
-	tempvar howmany
-	count if `generate' == 1
-
-	while `r(N)' {
-		bys `twoWaynewid': gen `howmany' = _N if `generate'
-		replace `generate' = 0 if `howmany' == 1
-		drop `howmany'
-
-		bys `twoWaynewt': gen `howmany' = _N if `generate'
-		replace `generate' = 0 if `howmany' == 1
-		
-		count if `howmany' == 1
-		drop `howmany'
-	}
-	}
-}
-
-
-
-
+mata projDummies_load()
 
 end
 
 capture program drop twowayreg 
 
 program define twowayreg, eclass sortpreserve
-    version 14
+    version 11
  
     syntax varlist(numeric ts fv),[,ROBUST VCE(namelist) statadof] 
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
-	
-	gettoken twoway_id aux: absorb
-	gettoken twoway_t w: aux
+
 	qui{
 	tempvar touse_reg
 	gen byte `touse_reg'= e(sample)
 	}
 	scalar N= e(H)
-	scalar T= e(T)
+	scalar Tid= e(T)
 	matrix invDD=e(invDD)
 	matrix invHH=e(invHH)
-	if (N<T){
+	if (N<Tid){
 		matrix CinvHHDH=e(CinvHHDH)
 		matrix A= e(A)
 		matrix B=e(B)
@@ -674,13 +613,14 @@ program define twowayreg, eclass sortpreserve
 		matrix C= e(C)
 		matrix B=e(B)
 	}
- 
+	
+	
    if ("`robust'"=="robust"){
    *standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation    
    	qui{
   	regress `depvar' `indepvars' , noc robust
-	scalar vadj = e(df_r)/(e(df_r)- N - T)
-	scalar df_r1= e(df_r) - N - T
+	scalar vadj = e(df_r)/(e(df_r)- N - Tid)
+	scalar df_r1= e(df_r) - N - Tid
     }
  }
     else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== ""){
@@ -691,7 +631,7 @@ program define twowayreg, eclass sortpreserve
 		scalar df_r= e(N)-e(df_m)-1
 	}
 	scalar df_r1= e(df_r)
-	scalar vadj = df_r/(df_r- N - T)
+	scalar vadj = df_r/(df_r- N - Tid)
 	    }
  }
 
@@ -715,8 +655,8 @@ program define twowayreg, eclass sortpreserve
      *standard errors assuming homoscedasticity and no within  group correlation or serial correlation
   qui{
   	regress `depvar' `indepvars'  , noc
-	scalar df_r1= e(df_r)-N-T
-	scalar vadj = e(df_r)/(e(df_r)- N - T)
+	scalar df_r1= e(df_r)-N-Tid
+	scalar vadj = e(df_r)/(e(df_r)- N - Tid)
 	}
   }
 	mat b=e(b)
@@ -736,10 +676,10 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar df_r1= df_r1
   ereturn scalar rtms= rtms
   ereturn scalar H= N
-  ereturn scalar T= T
+  ereturn scalar Tid= Tid
   ereturn matrix invDD= invDD
   ereturn matrix invHH= invHH
-  if (N<T){
+  if (N<Tid){
 	ereturn matrix CinvHHDH=CinvHHDH
 	ereturn matrix A= A
 	ereturn matrix B= B
@@ -749,6 +689,7 @@ else {
 	ereturn matrix C= C
 	ereturn matrix B= B
 }
+  
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
   display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
@@ -782,7 +723,7 @@ return scalar dofadj = `dofadj'
 end
 
 program define twowayprep, eclass sortpreserve
-version 14 
+version 11
 syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3)] [,NEWVars(name) REPLACE]
 gettoken depvar indepvars : varlist
 
@@ -823,7 +764,7 @@ drop twoWaynewid twoWaynewt
 end 
 
 program define twowayregwrap, eclass sortpreserve
-version 14 
+version 11
 syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof] [, SAVE rootsave(name) foldersave(string)]
 gettoken depvar indepvars : varlist
 
