@@ -131,7 +131,7 @@ D = st_data(.,(newid,newt),sampleVarName)
 D = (D,J(rows(D),1,1))
 }
 else {
-D = st_data(.,("twoWaynewid","twoWaynewt",w),sampleVarName)
+D = st_data(.,(newid,newt,w),sampleVarName)
 }
 
 DH1=sparse(D)
@@ -146,8 +146,8 @@ invHH=HH:^-1
 N=colmax(D)[.,1]
 T=colmax(D)[.,2]
 
-st_numscalar("e(H)",N)
-st_numscalar("e(Tid)",T)
+st_numscalar("e(dimN)",N)
+st_numscalar("e(dimT)",T)
 st_matrix("e(invDD)",invDD)
 st_matrix("e(invHH)",invHH) 
 
@@ -284,8 +284,9 @@ void projVar()
 	newvar = st_local("newvar")
 	var1 = st_local("var1")
 	var2 = st_local("var2")
-	N=st_numscalar("e(H)")
-	T=st_numscalar("e(Tid)")
+	N=st_numscalar("e(dimN)")
+	T=st_numscalar("e(dimT)")
+	
 	w=st_strscalar("twoWayw")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
@@ -399,11 +400,11 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	}
 
 drop `linear_index'
-scalar N= e(H)
-scalar Tid= e(Tid)
+scalar dimN= e(dimN)
+scalar dimT= e(dimT)
 matrix invDD=e(invDD)
 matrix invHH=e(invHH)
-if (N<Tid){
+if (dimN<dimT){
 	matrix CinvHHDH=e(CinvHHDH)
 	matrix A= e(A)
 	matrix B=e(B)
@@ -424,19 +425,14 @@ mata
 void projDummies_save()
 {
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
-real colvector  invDD, invHH
+real colvector  invDD, invHH, var1b,var2b
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
 root =st_local("using")
-var1 = st_local("var_1")
-var2 = st_local("var_2")
-var1= st_data(.,var1)
-saveMat(root,"AbsorbFE_1",var1)
-var2= st_data(.,var2)
-saveMat(root,"AbsorbFE_2",var1)
-N=st_numscalar("N")
-T=st_numscalar("Tid")
+
+N=st_numscalar("dimN")
+T=st_numscalar("dimT")
 invDD=st_matrix("invDD")
 invHH=st_matrix("invHH") 
 saveMat(root,"twoWayN1", N)
@@ -479,14 +475,13 @@ version 11
 syntax [using/]
 local absorb = "`e(absorb)'"
 gettoken var_1 var_2: absorb
-ereturn local absorb "`absorb'"
- 
-scalar N= e(H)
-scalar Tid=e(Tid)
+
+scalar dimN= e(dimN)
+scalar dimT=e(dimT)
 matrix invDD=e(invDD)
 matrix invHH=e(invHH)
 
-if (N<Tid){
+if (dimN<dimT){
 	matrix CinvHHDH=e(CinvHHDH)
 	matrix A= e(A)
 	matrix B=e(B)
@@ -496,7 +491,6 @@ else {
 	matrix C= e(C)
 	matrix B=e(B)
 }
-
 	mata projDummies_save()
 
 end
@@ -514,18 +508,12 @@ string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
 root =st_local("using")
 w = st_local("twoway_w")
-var1= readMat(root,"AbsorbFE_1")
-var2= readMat(root,"AbsorbFE_2")
-
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
 invDD=readMat(root,"twoWayInvDD")
 invHH=readMat(root,"twoWayInvHH")
-st_matrix("e(var1)", var1)
-st_matrix("e(var2)", var2)
-
-st_numscalar("e(H)",N)
-st_numscalar("e(Tid)",T)
+st_numscalar("e(dimN)",N)
+st_numscalar("e(dimT)",T)
 st_matrix("e(invDD)",invDD)
 st_matrix("e(invHH)",invHH) 
 
@@ -558,13 +546,73 @@ end
 
 program define twowayload, eclass
 version 11
-syntax [using/]
+syntax  varlist(min=2 max=3) [using/] [if] [in],[GENerate(namelist min=2 max=2) Nogen]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 
-mata projDummies_load()
-ereturn local absorb "`e(var1)' `e(var2)'"
+	if !("`w'"==""){
+	replace `w' = . if `w'<=0
+	}
+	
+	qui{
+	tempvar touse_set
+	mark `touse_set' `if' `in'
 
+
+	tempvar howmany
+	count if `touse_set'== 1
+
+	while `r(N)' {
+			bys `twoway_id': gen `howmany' = _N if `touse_set'
+			replace `touse_set'= 0 if `howmany' == 1
+			drop `howmany'
+
+			bys `twoway_t': gen `howmany' = _N if `touse_set'
+			replace `touse_set'= 0 if `howmany' == 1
+						
+			count if `howmany' == 1
+			drop `howmany'
+			}
+	tempvar touse_set2
+	gen `touse_set2'= `touse_set'
+	}	
+	
+	ereturn post, esample(`touse_set2')
+		
+	if ("`nogen'"=="nogen"){
+		sort `twoway_id' `twoway_t'
+		qui{
+			tempvar check1
+			gen `check1'=`twoway_id'[_n]-`twoway_id'[_n-1]
+			replace `check1'=1 if _n==1
+			capture assert `check1'<=1 
+			local rc = _rc
+		}
+		if `rc'{
+			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
+			exit `rc'
+		} 
+		tempvar var1 var2
+		gen `var1'= `twoway_id'
+		gen `var2'= `twoway_t'
+
+		ereturn local absorb "`twoway_id' `twoway_t'"
+
+	}
+	
+	else{
+		gettoken var1 var2: generate
+		egen `var1'= group(`twoway_id')
+		egen `var2'= group(`twoway_t')
+		ereturn local absorb "`var1' `var2'"
+		}
+
+mata projDummies_load()
+scalar twoWayw="`twoway_w'"
+scalar twoWayif="`if'"
+scalar twoWayin="`in'"
+
+ereturn list
 end
 
 capture program drop twowayreg 
@@ -582,11 +630,11 @@ program define twowayreg, eclass sortpreserve
 	tempvar touse_reg
 	gen byte `touse_reg'= e(sample)
 	}
-	scalar N= e(H)
-	scalar Tid= e(Tid)
+	scalar dimN= e(dimN)
+	scalar dimT= e(dimT)
 	matrix invDD=e(invDD)
 	matrix invHH=e(invHH)
-	if (N<Tid){
+	if (dimN<dimT){
 		matrix CinvHHDH=e(CinvHHDH)
 		matrix A= e(A)
 		matrix B=e(B)
@@ -602,8 +650,8 @@ program define twowayreg, eclass sortpreserve
    *standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation    
    	qui{
   	regress `depvar' `indepvars' , noc robust
-	scalar vadj = e(df_r)/(e(df_r)- N - Tid)
-	scalar df_r1= e(df_r) - N - Tid
+	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT)
+	scalar df_r1= e(df_r) - dimN - dimT
     }
  }
     else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== ""){
@@ -614,7 +662,7 @@ program define twowayreg, eclass sortpreserve
 		scalar df_r= e(N)-e(df_m)-1
 	}
 	scalar df_r1= e(df_r)
-	scalar vadj = df_r/(df_r- N - Tid)
+	scalar vadj = df_r/(df_r- dimN - dimT)
 	    }
  }
 
@@ -638,8 +686,8 @@ program define twowayreg, eclass sortpreserve
      *standard errors assuming homoscedasticity and no within  group correlation or serial correlation
   qui{
   	regress `depvar' `indepvars'  , noc
-	scalar df_r1= e(df_r)-N-Tid
-	scalar vadj = e(df_r)/(e(df_r)- N - Tid)
+	scalar df_r1= e(df_r)-dimN-dimT
+	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT)
 	}
   }
 	mat b=e(b)
@@ -659,11 +707,11 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar df_m=df_m
   ereturn scalar df_r1= df_r1
   ereturn scalar rtms= rtms
-  ereturn scalar H= N
-  ereturn scalar Tid= Tid
+  ereturn scalar dimN= dimN
+  ereturn scalar dimT= dimT
   ereturn matrix invDD= invDD
   ereturn matrix invHH= invHH
-  if (N<Tid){
+  if (dimN<dimT){
 	ereturn matrix CinvHHDH=CinvHHDH
 	ereturn matrix A= A
 	ereturn matrix B= B
