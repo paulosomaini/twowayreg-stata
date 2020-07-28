@@ -147,7 +147,7 @@ N=colmax(D)[.,1]
 T=colmax(D)[.,2]
 
 st_numscalar("e(H)",N)
-st_numscalar("e(T)",T)
+st_numscalar("e(Tid)",T)
 st_matrix("e(invDD)",invDD)
 st_matrix("e(invHH)",invHH) 
 
@@ -285,7 +285,7 @@ void projVar()
 	var1 = st_local("var1")
 	var2 = st_local("var2")
 	N=st_numscalar("e(H)")
-	T=st_numscalar("e(T)")
+	T=st_numscalar("e(Tid)")
 	w=st_strscalar("twoWayw")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
@@ -350,16 +350,12 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [ABSorb(varlist)] [Prefix(name)] [REPLACE]
+syntax varlist, [Prefix(name)] [REPLACE]
 	
-	if("`absorb(`varlist')'"=="`absorb(`varlist')'"){
-		gettoken var1 var2 : absorb
-	}
-	else if ("`absorb(`varlist')'"==""){
-		local absorb = "`e(absorb)'"
+	local absorb = "`e(absorb)'"
 	gettoken var1 var2 : absorb
 	
-	}
+	
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
@@ -404,7 +400,7 @@ syntax varlist, [ABSorb(varlist)] [Prefix(name)] [REPLACE]
 
 drop `linear_index'
 scalar N= e(H)
-scalar Tid= e(T)
+scalar Tid= e(Tid)
 matrix invDD=e(invDD)
 matrix invHH=e(invHH)
 if (N<Tid){
@@ -591,6 +587,7 @@ program define twowayreg, eclass sortpreserve
     version 11
  
     syntax varlist(numeric ts fv),[,ROBUST VCE(namelist) statadof] 
+	local absorb = "`e(absorb)'"
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
@@ -600,7 +597,7 @@ program define twowayreg, eclass sortpreserve
 	gen byte `touse_reg'= e(sample)
 	}
 	scalar N= e(H)
-	scalar Tid= e(T)
+	scalar Tid= e(Tid)
 	matrix invDD=e(invDD)
 	matrix invHH=e(invHH)
 	if (N<Tid){
@@ -669,6 +666,7 @@ program define twowayreg, eclass sortpreserve
 
 
   eret post b V, esample(`touse_reg')
+  ereturn local absorb "`absorb'"
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
   ereturn scalar F= F
@@ -695,7 +693,9 @@ else {
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
   display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
   eret display
-  
+
+  gettoken var1 var2 : absorb
+
   
 end 
  

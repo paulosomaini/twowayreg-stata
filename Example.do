@@ -73,7 +73,9 @@ do twowayreg.ado
 use Example2.dta
 *** 2) Run Our procedure
 twowayset hid tid, nogen
-projvar y x*, p(w_)
+projvar y x1, p(w_)
+twowayreg w_y w_x1, robust
+projvar x2, p(w_)
 twowayreg w_y w_x*, robust
 
 drop w_*
