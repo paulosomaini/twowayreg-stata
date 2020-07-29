@@ -46,9 +46,9 @@ real matrix sparse(real matrix x)
   return(y)
  }
  
-  real matrix readMat(string s,string n)
+   matrix readMat(string s,string n)
  {
-  real matrix X
+  matrix X
   real scalar fh
 fh = fopen(s+"_"+n, "r")
 X = fgetmatrix(fh)
@@ -56,8 +56,9 @@ fclose(fh)
 return(X)
  }
  
+ 
   
- void saveMat(string s,string n,real matrix X)
+ void saveMat(string s,string n,matrix X)
  {
   real scalar fh
 fh = fopen(s + "_" + n, "rw")
@@ -421,20 +422,29 @@ end
 capture program drop twowaysave
 capture mata mata drop projDummies_save()
 
+capture program drop twowaysave
+capture mata mata drop projDummies_save()
+
 mata
 void projDummies_save()
 {
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
-real colvector  invDD, invHH, var1b,var2b
+real colvector  invDD, invHH, var1,var2
 real scalar N, T
 string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
-root =st_local("using")
 
+root =st_local("using")
+newid=st_local("var_1")
+st_local("newid",newid)
+newt=st_local("var_2")
+st_local("newt",newt)
 N=st_numscalar("dimN")
 T=st_numscalar("dimT")
 invDD=st_matrix("invDD")
 invHH=st_matrix("invHH") 
+saveMat(root,"twoWayVar1", newid)
+saveMat(root,"twoWayVar2", newt)
 saveMat(root,"twoWayN1", N)
 saveMat(root,"twoWayN2", T)
 saveMat(root,"twoWayInvDD", invDD)
@@ -474,8 +484,14 @@ program define twowaysave, eclass
 version 11
 syntax [using/]
 local absorb = "`e(absorb)'"
-gettoken var_1 var_2: absorb
+gettoken var1 var2: absorb
+local var_1 `var1'
+local var_2 `var2'
 
+qui{
+tempvar touse_save
+gen byte `touse_save'= e(sample)
+}
 scalar dimN= e(dimN)
 scalar dimT=e(dimT)
 matrix invDD=e(invDD)
@@ -491,7 +507,26 @@ else {
 	matrix C= e(C)
 	matrix B=e(B)
 }
-	mata projDummies_save()
+
+ereturn clear
+ereturn post, esample(`touse_save')
+mata projDummies_save()
+ereturn local absorb "`newid' `newt'"
+ereturn scalar dimN= dimN
+ereturn scalar dimT= dimT
+ereturn matrix invDD= invDD
+ereturn matrix invHH= invHH
+if (dimN<dimT){
+	ereturn matrix CinvHHDH=CinvHHDH
+	ereturn matrix A= A
+	ereturn matrix B= B
+}
+else {
+	ereturn matrix AinvDDDH=AinvDDDH
+	ereturn matrix C= C
+	ereturn matrix B= B
+}
+
 
 end
 
@@ -508,6 +543,12 @@ string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
 
 root =st_local("using")
 w = st_local("twoway_w")
+newid= readMat(root,"twoWayVar1")
+newt= readMat(root,"twoWayVar2")
+
+st_local("newid",newid)
+st_local("newt",newt)
+
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
 invDD=readMat(root,"twoWayInvDD")
@@ -546,14 +587,10 @@ end
 
 program define twowayload, eclass
 version 11
-syntax  varlist(min=2 max=3) [using/] [if] [in],[GENerate(namelist min=2 max=2) Nogen]
-gettoken twoway_id aux: varlist
-gettoken twoway_t twoway_w: aux
-
-	if !("`w'"==""){
-	replace `w' = . if `w'<=0
-	}
-	
+syntax [using/] [if] [in]
+mata projDummies_load()
+gettoken twoway_id: newid
+gettoken twoway_t: newt
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
@@ -576,43 +613,41 @@ gettoken twoway_t twoway_w: aux
 	tempvar touse_set2
 	gen `touse_set2'= `touse_set'
 	}	
-	
-	ereturn post, esample(`touse_set2')
-		
-	if ("`nogen'"=="nogen"){
-		sort `twoway_id' `twoway_t'
-		qui{
-			tempvar check1
-			gen `check1'=`twoway_id'[_n]-`twoway_id'[_n-1]
-			replace `check1'=1 if _n==1
-			capture assert `check1'<=1 
-			local rc = _rc
-		}
-		if `rc'{
-			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
-			exit `rc'
-		} 
-		tempvar var1 var2
-		gen `var1'= `twoway_id'
-		gen `var2'= `twoway_t'
+scalar dimN= e(dimN)
+scalar dimT=e(dimT)
+matrix invDD=e(invDD)
+matrix invHH=e(invHH)
 
-		ereturn local absorb "`twoway_id' `twoway_t'"
-
-	}
-	
-	else{
-		gettoken var1 var2: generate
-		egen `var1'= group(`twoway_id')
-		egen `var2'= group(`twoway_t')
-		ereturn local absorb "`var1' `var2'"
-		}
-
-mata projDummies_load()
+if (dimN<dimT){
+	matrix CinvHHDH=e(CinvHHDH)
+	matrix A= e(A)
+	matrix B=e(B)
+}
+else {
+	matrix AinvDDDH=e(AinvDDDH)
+	matrix C= e(C)
+	matrix B=e(B)
+}
+ereturn post, esample(`touse_set2')
+ereturn local absorb "`newid' `newt'"
+ereturn scalar dimN= dimN
+ereturn scalar dimT= dimT
+ereturn matrix invDD= invDD
+ereturn matrix invHH= invHH
+if (dimN<dimT){
+	ereturn matrix CinvHHDH=CinvHHDH
+	ereturn matrix A= A
+	ereturn matrix B= B
+}
+else {
+	ereturn matrix AinvDDDH=AinvDDDH
+	ereturn matrix C= C
+	ereturn matrix B= B
+}
 scalar twoWayw="`twoway_w'"
 scalar twoWayif="`if'"
 scalar twoWayin="`in'"
 
-ereturn list
 end
 
 capture program drop twowayreg 
