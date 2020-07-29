@@ -1,8 +1,5 @@
 capture program drop twowayregwrap
-capture program drop twowayprep
 capture program drop twowayset
-capture mata mata drop dofadj()
-capture mata mata drop dofadj_l()
 capture mata mata drop sparse()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
@@ -66,24 +63,6 @@ fputmatrix(fh, X)
 fclose(fh)
  }
  
-  real matrix dofadj(real dof)
- {
-  real scalar adj, T, N
-  N=st_numscalar("N")
-  T=st_numscalar("T")
- adj = sqrt(dof/(dof - N - T + 1))
-  return(adj)
- }
-
- 
- real matrix dofadj_l(string root, real dof)
- {
-  real scalar adj, T, N
-  N=readMat(root,"twoWayN1")
-  T=readMat(root,"twoWayN2")
-  adj = sqrt(dof/(dof - N - T + 1))
-  return(adj)
- }
  
   real matrix proddiag(real matrix A,real colvector x)
  {
@@ -187,12 +166,14 @@ syntax varlist [if] [in]
 
 gettoken twoway_id twoway_t: varlist
 
+	*touse_red is created to pass the if and in options of twowayset or twowayload to nonredundants 
 	tempvar touse_red
 	mark `touse_red' `if' `in'
-
+	
 	tempvar howmany
 	count if `touse_red'== 1
-
+	
+	*with this part of the code we are able to discard the redundants observations of analysis 
 	while `r(N)' {
 			bys `twoway_id': gen `howmany' = _N if `touse_red'
 			replace `touse_red'= 0 if `howmany' == 1
@@ -206,6 +187,7 @@ gettoken twoway_id twoway_t: varlist
 			}
 	tempvar touse_red2
 	gen `touse_red2'= `touse_red'
+	*touse_set_help is generated to pass the variables created to other commands
 	gen touse_set_help= `touse_red'
 end
 
@@ -215,28 +197,31 @@ version 11
 syntax varlist(min=2 max=3) [if] [in], [GENerate(namelist min=2 max=2) Nogen]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
-//summ `varlist'
-// I need to make it robust to non 1,2,3... ids.
-
-
-
+	*Discard the observations with negative weights
 	if !("`w'"==""){
 	replace `w' = . if `w'<=0
 	}
 	
+	
 	qui{
+	*if and in options to twowayset
 	tempvar touse_set
 	mark `touse_set' `if' `in'
 	
 	nonredundants `twoway_id' `twoway_t' if `touse_set'
 	tempvar touse_set2 touse_set3
+	
+	*touse_set2 is used in ProjDummies() as a marker of nonredundants observations
 	gen `touse_set2'=touse_set_help
+	
+	*touse_set_3 is created to be used in e(sample)
 	gen `touse_set3'=touse_set_help
+	
 	drop touse_set_help
 	ereturn post, esample(`touse_set3')
 }
 
-	
+	*option nogen to not generate extra fixed effects, this command is usefull if the fixed effects are consecutives
 	if ("`nogen'"=="nogen"){
 		sort `twoway_id' `twoway_t'
 		qui{
@@ -259,6 +244,7 @@ gettoken twoway_t twoway_w: aux
 	}
 	
 	else{
+		*if the fixed effects are not consecutive the user has to create new variables to be used to create D matrix
 		gettoken var1 var2: generate
 		egen `var1'= group(`twoway_id')
 		egen `var2'= group(`twoway_t')
@@ -269,17 +255,11 @@ gettoken twoway_t twoway_w: aux
 	drop `touse_set'
 	
 	
-	//di in gr "Checkpoint 1"
-//ret li
-//di in gr "Checkpoint 2"
 	scalar twoWaynewid= `var1'
 	scalar twoWaynewt= `var2'
 	scalar twoWayw="`twoway_w'"
 	scalar twoWayif="`if'"
 	scalar twoWayin="`in'"
-
-//return post r(B), esample(`twoway_sample') 
-//obs(`nobs') dof(`dof')
 
 
 end
@@ -325,11 +305,6 @@ void projVar()
 	Ty=colsum(aux)
 	Ty=Ty[1,1..cols(aux)-1]'
 	B=st_matrix("e(B)")
-	
-	//rows(Ty)
-    //cols(Ty)
-	//rows(Dy)
-	//cols(Dy)
 			
 
 	 if (N<T)
@@ -338,28 +313,21 @@ void projVar()
 			A=st_matrix("e(A)")
 			invHH=st_matrix("e(invHH)")
 			CinvHHDH=st_matrix("e(CinvHHDH)")
-			//printf("b")
 			delta=A*Dy+B*Ty
 			tau=B'*(Dy-CinvHHDH'*Ty)+(invHH:*Ty) \0
 			}
 		else
 		{
-			//printf("1")
 			C=st_matrix("e(C)")
 			invDD=st_matrix("e(invDD)")
 			AinvDDDH=st_matrix("e(AinvDDDH)")
 			delta=(invDD:*Dy)+B*(Ty-AinvDDDH'*Dy)
 			tau=B'*Dy+C*Ty \0 
-			//printf("c")
 		}
 
-	//how to index
-	//varout=(var-delta(struc.hhid)-tau(struc.tid')).*sqrt(struc.w);
 	varOut=(varIn-delta[V[.,1]]-tau[V[.,2]]):*sqrt(D[.,3])
-	//printf("4")
-	//st_matrix("DD2",B)
 	st_store(st_data(.,linear_index,sampleVarName), newvar, varOut)
-	//printf("5")
+
 }
 end
 
@@ -369,20 +337,25 @@ program define projvar, nclass
 version 11
 syntax varlist, [Prefix(name)] [REPLACE]
 	
+	*in e(absorb) there is the fixed effects that we use to generate the new matrix V
 	local absorb = "`e(absorb)'"
 	gettoken var1 var2 : absorb
 	
-	
+	*set the vars to be projected
 	gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	
 	
 	qui{
+		
 	tempvar touse_proj touse_check linear_index
+	*set the sample that is projected
 	gen byte `touse_proj'= e(sample)
 	gen byte `touse_check'  =  `touse_proj'
-	markout `touse_check'  `varlist'   
+	*touse_check is a marker of missing values of the vars projected
+	markout `touse_check'  `varlist'
+	*check if there is a missing in some of the variables
 	capture assert  `touse_proj' ==  `touse_check' 
 	local rc = _rc
 	}
@@ -393,9 +366,10 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	drop `touse_check'
 	
 	
-	
+	*variable created to store only the observations that are non-missings and in that way the arrays are conformables
 	gen `linear_index' = _n	
 	
+	*we create the new variables, if a variable already exists then it is ignored and not projected
 	foreach currvar of varlist `varlist' {
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
@@ -416,6 +390,7 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	}
 
 drop `linear_index'
+*save in scalars and arrays the macros.
 scalar dimN= e(dimN)
 scalar dimT= e(dimT)
 matrix invDD=e(invDD)
@@ -433,9 +408,6 @@ else {
 
 
 end
-
-capture program drop twowaysave
-capture mata mata drop projDummies_save()
 
 capture program drop twowaysave
 capture mata mata drop projDummies_save()
@@ -498,8 +470,10 @@ end
 program define twowaysave, eclass
 version 11
 syntax [using/]
+
 local absorb = "`e(absorb)'"
 gettoken var1 var2: absorb
+*obtain the name of the fixed effects
 local var_1 `var1'
 local var_2 `var2'
 
@@ -507,6 +481,8 @@ qui{
 tempvar touse_save
 gen byte `touse_save'= e(sample)
 }
+
+*create the scalars that are store in e()
 scalar dimN= e(dimN)
 scalar dimT=e(dimT)
 matrix invDD=e(invDD)
@@ -523,6 +499,7 @@ else {
 	matrix B=e(B)
 }
 
+*create the new list of macros
 ereturn clear
 ereturn post, esample(`touse_save')
 mata projDummies_save()
@@ -604,6 +581,7 @@ program define twowayload, eclass
 version 11
 syntax [using/] [if] [in]
 mata projDummies_load()
+*tokenize the names of the fixed effects
 gettoken twoway_id: newid
 gettoken twoway_t: newt
 	qui{
@@ -616,6 +594,7 @@ gettoken twoway_t: newt
 	drop touse_set_help
 
 }
+*save the arrays, scalars obtained in ProjDummies_load()
 scalar dimN= e(dimN)
 scalar dimT=e(dimT)
 matrix invDD=e(invDD)
@@ -633,6 +612,7 @@ else {
 }
 ereturn post, esample(`touse_set2')
 ereturn local absorb "`newid' `newt'"
+*store the arrays and scalars in e()
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
 ereturn matrix invDD= invDD
@@ -736,8 +716,9 @@ program define twowayreg, eclass sortpreserve
 	scalar rtms= e(rmse)
 	matrix V = vadj*e(V)
 
-
+  *table of regression with standar errors with dof correction
   eret post b V, esample(`touse_reg')
+  *macros 
   ereturn local absorb "`absorb'"
   ereturn scalar N_1= N_1
   ereturn scalar R2= R2
@@ -759,7 +740,7 @@ else {
 	ereturn matrix C= C
 	ereturn matrix B= B
 }
-  
+  *table display
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
   display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
@@ -773,80 +754,20 @@ end
  
 
 
-capture program drop dofadj
-program define dofadj, rclass
-version 11
-syntax ,[Root(name)]
-local dof = `e(N)'-`e(df_m)'-1
-mata dofadj(`dof')
-mata st_local("dofadj", strofreal(dofadj(`dof')))
-return scalar dofadj = `dofadj'
-end
-
-capture program drop dofadj_l
-
-program define dofadj_l, rclass
-version 11
-syntax ,[Root(name)]
-local dof = `e(N)'-`e(df_m)'-1
-mata dofadj_l("`root'",`dof')
-mata st_local("dofadj", strofreal(dofadj_l("`root'",`dof')))
-return scalar dofadj = `dofadj'
-end
-
-program define twowayprep, eclass sortpreserve
-version 11
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3)] [,NEWVars(name) REPLACE]
-gettoken depvar indepvars : varlist
-
-
-	gettoken twoway_id aux: absorb
-	gettoken twoway_t w: aux
-	qui{
-	tempvar touse_prep
-	mark `touse_prep' `if' `in'
-	markout `touse_prep' `varlist'
-
-	tempvar howmany
-	count if `touse_prep'== 1
-
-	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_prep'
-			replace `touse_prep'= 0 if `howmany' == 1
-			drop `howmany'
-
-			bys `twoway_t': gen `howmany' = _N if `touse_prep'
-			replace `touse_prep'= 0 if `howmany' == 1
-						
-			count if `howmany' == 1
-			drop `howmany'
-			}
-	}	
-
-	twowayset `absorb' if `touse_prep'
-	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
-	          projvar `depvar' `indepvars' if `touse_prep', p(`newvars')
-	}
-	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars' if `touse_prep', replace
-	}
-
-drop twoWaynewid twoWaynewt
-
-end 
-
 program define twowayregwrap, eclass sortpreserve
 version 11
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof] [, SAVE rootsave(name) foldersave(string)]
+syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
 gettoken depvar indepvars : varlist
 
 
 	qui{
+	*tempvar to use if and in and delete missings observation of analysis
 	tempvar touse_wrap
 	mark `touse_wrap' `if' `in'
 	markout `touse_wrap' `varlist'
 	}
 if ("`noproj'"=="" & "`nogen'"=="nogen"){
+	*make the whole regression without creating new fixed effects
 	twowayset `absorb' if `touse_wrap', nogen
 	gettoken twoway_id twoway_t : absorb
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
@@ -869,6 +790,7 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 	}
 }	
 if ("`noproj'"=="" & "`nogen'"==""){
+	*make the whole regression creating new fixed effects
 	twowayset `absorb' if `touse_wrap', gen(`generate')
 	gettoken twoway_new_id twoway_new_t : generate
 
@@ -893,6 +815,7 @@ if ("`noproj'"=="" & "`nogen'"==""){
 }	
 
 else if ("`noproj'"=="noproj"){
+	*option just to make the regression without setting the fixed effects or projecting varlist
 	gettoken twoway_id aux: absorb
 	gettoken twoway_t w: aux
 
@@ -901,20 +824,6 @@ else if ("`noproj'"=="noproj"){
 }
 
 
-/*
-if ("`SAVE'"=="save"){
-    twowaysave
-}
-
-
-else if ("`rootsave(`name')'"=="`rootsave(name)'"){
-    twowaysave, root(`rootsave')
-}
-
-else if ("`foldersave(`string')'"=="`foldersave(`string')'"){
-    twowaysave, folder(`foldersave')
-}
-*/
 
 
 end
