@@ -126,7 +126,7 @@ D=.
 newid=st_local("var1")
 newt=st_local("var2")
 w = st_local("twoway_w")
-sampleVarName = st_local("touse_set")
+sampleVarName = st_local("touse_set2")
 if (w==""){
 D = st_data(.,(newid,newt),sampleVarName)
 D = (D,J(rows(D),1,1))
@@ -181,7 +181,34 @@ if (N<T)
  
  end
  
- 
+ program define nonredundants, eclass sortpreserve
+version 11
+syntax varlist [if] [in]
+
+gettoken twoway_id twoway_t: varlist
+
+	tempvar touse_red
+	mark `touse_red' `if' `in'
+
+	tempvar howmany
+	count if `touse_red'== 1
+
+	while `r(N)' {
+			bys `twoway_id': gen `howmany' = _N if `touse_red'
+			replace `touse_red'= 0 if `howmany' == 1
+			drop `howmany'
+
+			bys `twoway_t': gen `howmany' = _N if `touse_red'
+			replace `touse_red'= 0 if `howmany' == 1
+						
+			count if `howmany' == 1
+			drop `howmany'
+			}
+	tempvar touse_red2
+	gen `touse_red2'= `touse_red'
+	gen touse_set_help= `touse_red'
+end
+
 
 program define twowayset, eclass sortpreserve
 version 11
@@ -200,27 +227,15 @@ gettoken twoway_t twoway_w: aux
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
-
-
-	tempvar howmany
-	count if `touse_set'== 1
-
-	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_set'
-			replace `touse_set'= 0 if `howmany' == 1
-			drop `howmany'
-
-			bys `twoway_t': gen `howmany' = _N if `touse_set'
-			replace `touse_set'= 0 if `howmany' == 1
-						
-			count if `howmany' == 1
-			drop `howmany'
-			}
-	tempvar touse_set2
-	gen `touse_set2'= `touse_set'
-	}	
 	
-	ereturn post, esample(`touse_set2')
+	nonredundants `twoway_id' `twoway_t' if `touse_set'
+	tempvar touse_set2 touse_set3
+	gen `touse_set2'=touse_set_help
+	gen `touse_set3'=touse_set_help
+	drop touse_set_help
+	ereturn post, esample(`touse_set3')
+}
+
 	
 	if ("`nogen'"=="nogen"){
 		sort `twoway_id' `twoway_t'
@@ -594,25 +609,13 @@ gettoken twoway_t: newt
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
+	
+	nonredundants `twoway_id' `twoway_t' if `touse_set'
+	tempvar touse_set2 touse_set3
+	gen `touse_set2'=touse_set_help
+	drop touse_set_help
 
-
-	tempvar howmany
-	count if `touse_set'== 1
-
-	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_set'
-			replace `touse_set'= 0 if `howmany' == 1
-			drop `howmany'
-
-			bys `twoway_t': gen `howmany' = _N if `touse_set'
-			replace `touse_set'= 0 if `howmany' == 1
-						
-			count if `howmany' == 1
-			drop `howmany'
-			}
-	tempvar touse_set2
-	gen `touse_set2'= `touse_set'
-	}	
+}
 scalar dimN= e(dimN)
 scalar dimT=e(dimT)
 matrix invDD=e(invDD)
