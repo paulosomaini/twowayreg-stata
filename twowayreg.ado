@@ -245,11 +245,7 @@ gettoken twoway_t twoway_w: aux
 	drop `touse_set'
 	
 	
-	scalar twoWaynewid= `var1'
-	scalar twoWaynewt= `var2'
-	scalar twoWayw="`twoway_w'"
-	scalar twoWayif="`if'"
-	scalar twoWayin="`in'"
+
 
 end
 
@@ -272,7 +268,7 @@ void projVar()
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
 	
-	w=st_strscalar("twoWayw")
+	w=st_local("w")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
 	V = st_data(.,(var1, var2,currvar),sampleVarName)
@@ -330,6 +326,7 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	local absorb = "`e(absorb)'"
 	gettoken var1 aux : absorb
 	gettoken var2 twoway_w : aux
+	local w `twoway_w'
 	
 	*set the vars to be projected
 	gettoken depvar indepvars : varlist
@@ -408,7 +405,7 @@ void matasave()
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH, var1,var2
 real scalar N, T
-string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
+string scalar newid,newt, w,sampleVarName, root
 
 
 root =st_local("using")
@@ -416,12 +413,15 @@ newid=st_local("var_1")
 st_local("newid",newid)
 newt=st_local("var_2")
 st_local("newt",newt)
+w=st_local("twoway_w")
+st_local("w",w)
 N=st_numscalar("dimN")
 T=st_numscalar("dimT")
 invDD=st_matrix("invDD")
 invHH=st_matrix("invHH") 
 saveMat(root,"twoWayVar1", newid)
 saveMat(root,"twoWayVar2", newt)
+saveMat(root,"twoWayW",w)
 saveMat(root,"twoWayN1", N)
 saveMat(root,"twoWayN2", T)
 saveMat(root,"twoWayInvDD", invDD)
@@ -462,10 +462,12 @@ version 11
 syntax [using/]
 
 local absorb = "`e(absorb)'"
-gettoken var1 var2: absorb
+gettoken var1 aux: absorb
+gettoken var2 w: aux
 *obtain the name of the fixed effects
 local var_1 `var1'
 local var_2 `var2'
+local twoway_w `w'
 
 qui{
 tempvar touse_save
@@ -493,7 +495,7 @@ else {
 ereturn clear
 ereturn post, esample(`touse_save')
 mata matasave()
-ereturn local absorb "`newid' `newt'"
+ereturn local absorb "`newid' `newt' `w'"
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
 ereturn matrix invDD= invDD
@@ -521,15 +523,16 @@ void mataload()
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH
 real scalar N, T
-string scalar twoWaynewid,twoWaynewt, w,sampleVarName, root
+string scalar newid,newt, w,sampleVarName, root
 
 root =st_local("using")
-w = st_local("twoway_w")
+w = readMat(root,"twoWayW")
 newid= readMat(root,"twoWayVar1")
 newt= readMat(root,"twoWayVar2")
 
 st_local("newid",newid)
 st_local("newt",newt)
+st_local("w",w)
 
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
@@ -574,9 +577,16 @@ mata mataload()
 *tokenize the names of the fixed effects
 gettoken twoway_id: newid
 gettoken twoway_t: newt
+gettoken twoway_w: w
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
+	*Discard the observations with negative weights
+	if !("`twoway_w'"==""){
+	replace `twoway_w' = . if `twoway_w'<=0
+	replace `touse_set' = 0 if `twoway_w' == .
+	}
+
 	tempvar touse_set2
 	nonredundants `twoway_id' `twoway_t' if `touse_set', gen(`touse_set2')
 }
@@ -597,7 +607,7 @@ else {
 	matrix B=e(B)
 }
 ereturn post, esample(`touse_set2')
-ereturn local absorb "`newid' `newt'"
+ereturn local absorb "`newid' `newt' `w'"
 *store the arrays and scalars in e()
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
@@ -613,9 +623,7 @@ else {
 	ereturn matrix C= C
 	ereturn matrix B= B
 }
-scalar twoWayw="`twoway_w'"
-scalar twoWayif="`if'"
-scalar twoWayin="`in'"
+
 
 end
 
