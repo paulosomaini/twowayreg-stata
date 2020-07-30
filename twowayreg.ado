@@ -160,35 +160,31 @@ if (N<T)
  
  end
  
- program define nonredundants, eclass sortpreserve
+program define nonredundants, eclass sortpreserve
 version 11
-syntax varlist [if] [in]
+syntax varlist(min=2 max=2) [if] [in], GENerate(name)
 
 gettoken twoway_id twoway_t: varlist
 
 	*touse_red is created to pass the if and in options of twowayset or twowayload to nonredundants 
 	tempvar touse_red
-	mark `touse_red' `if' `in'
+	mark `generate' `if' `in'
 	
 	tempvar howmany
-	count if `touse_red'== 1
+	count if `generate'== 1
 	
 	*with this part of the code we are able to discard the redundants observations of analysis 
 	while `r(N)' {
-			bys `twoway_id': gen `howmany' = _N if `touse_red'
-			replace `touse_red'= 0 if `howmany' == 1
+			bys `twoway_id': gen `howmany' = _N if `generate'
+			replace `generate'= 0 if `howmany' == 1
 			drop `howmany'
 
-			bys `twoway_t': gen `howmany' = _N if `touse_red'
-			replace `touse_red'= 0 if `howmany' == 1
+			bys `twoway_t': gen `howmany' = _N if `generate'
+			replace `generate'= 0 if `howmany' == 1
 						
 			count if `howmany' == 1
 			drop `howmany'
 			}
-	tempvar touse_red2
-	gen `touse_red2'= `touse_red'
-	*touse_set_help is generated to pass the variables created to other commands
-	gen touse_set_help= `touse_red'
 end
 
 
@@ -208,20 +204,18 @@ gettoken twoway_t twoway_w: aux
 	tempvar touse_set
 	mark `touse_set' `if' `in'
 	
-	nonredundants `twoway_id' `twoway_t' if `touse_set'
 	tempvar touse_set2 touse_set3
-	
+
+	nonredundants `twoway_id' `twoway_t' if `touse_set', gen(`touse_set2')
+
 	*touse_set2 is used in ProjDummies() as a marker of nonredundants observations
-	gen `touse_set2'=touse_set_help
-	
 	*touse_set_3 is created to be used in e(sample)
-	gen `touse_set3'=touse_set_help
+	gen `touse_set3'=`touse_set2'
 	
-	drop touse_set_help
 	ereturn post, esample(`touse_set3')
 }
 
-	*option nogen to not generate extra fixed effects, this command is usefull if the fixed effects are consecutives
+	*option nogen to not generate extra fixed effects, this command is useful if the fixed effects are consecutives
 	if ("`nogen'"=="nogen"){
 		sort `twoway_id' `twoway_t'
 		qui{
@@ -232,25 +226,22 @@ gettoken twoway_t twoway_w: aux
 			local rc = _rc
 		}
 		if `rc'{
-			di "{err} The fixed effects are not consecutive, please use the option gen to generate consecutive variables." 
+			di "{err} The fixed effects indices are not consecutive integers. Please, use the option gen to generate consecutive variables." 
 			exit `rc'
-		} 
+		}
+		
 		tempvar var1 var2
-		gen `var1'= `twoway_id'
-		gen `var2'= `twoway_t'
-
-		ereturn local absorb "`twoway_id' `twoway_t'"
-
+		local var1 = "`twoway_id'"
+		local var2  "`twoway_t'"
 	}
-	
 	else{
 		*if the fixed effects are not consecutive the user has to create new variables to be used to create D matrix
 		gettoken var1 var2: generate
 		egen `var1'= group(`twoway_id')
 		egen `var2'= group(`twoway_t')
-		ereturn local absorb "`var1' `var2'"
-		}
 		
+		}
+	ereturn local absorb "`var1' `var2'"
 	mata projDummies()
 	drop `touse_set'
 	
@@ -260,7 +251,6 @@ gettoken twoway_t twoway_w: aux
 	scalar twoWayw="`twoway_w'"
 	scalar twoWayif="`if'"
 	scalar twoWayin="`in'"
-
 
 end
 
@@ -587,12 +577,8 @@ gettoken twoway_t: newt
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
-	
-	nonredundants `twoway_id' `twoway_t' if `touse_set'
-	tempvar touse_set2 touse_set3
-	gen `touse_set2'=touse_set_help
-	drop touse_set_help
-
+	tempvar touse_set2
+	nonredundants `twoway_id' `twoway_t' if `touse_set', gen(`touse_set2')
 }
 *save the arrays, scalars obtained in ProjDummies_load()
 scalar dimN= e(dimN)
@@ -770,7 +756,7 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 	*make the whole regression without creating new fixed effects
 	twowayset `absorb' if `touse_wrap', nogen
 	gettoken twoway_id twoway_t : absorb
-	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
+	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
 		if !_rc {
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
