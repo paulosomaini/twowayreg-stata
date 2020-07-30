@@ -193,19 +193,18 @@ version 11
 syntax varlist(min=2 max=3) [if] [in], [GENerate(namelist min=2 max=2) Nogen]
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
-	*Discard the observations with negative weights
-	if !("`w'"==""){
-	replace `w' = . if `w'<=0
-	}
-	
-	
+
 	qui{
 	*if and in options to twowayset
 	tempvar touse_set
 	mark `touse_set' `if' `in'
-	
-	tempvar touse_set2 touse_set3
+	*Discard the observations with negative weights
+	if !("`twoway_w'"==""){
+	replace `twoway_w' = . if `twoway_w'<=0
+	replace `touse_set' = 0 if `twoway_w' == .
+	}
 
+	tempvar touse_set2 touse_set3
 	nonredundants `twoway_id' `twoway_t' if `touse_set', gen(`touse_set2')
 
 	*touse_set2 is used in ProjDummies() as a marker of nonredundants observations
@@ -241,7 +240,7 @@ gettoken twoway_t twoway_w: aux
 		egen `var2'= group(`twoway_t')
 		
 		}
-	ereturn local absorb "`var1' `var2'"
+	ereturn local absorb "`var1' `var2' `twoway_w'"
 	mata projDummies()
 	drop `touse_set'
 	
@@ -329,7 +328,8 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	
 	*in e(absorb) there is the fixed effects that we use to generate the new matrix V
 	local absorb = "`e(absorb)'"
-	gettoken var1 var2 : absorb
+	gettoken var1 aux : absorb
+	gettoken var2 twoway_w : aux
 	
 	*set the vars to be projected
 	gettoken depvar indepvars : varlist
@@ -400,10 +400,10 @@ else {
 end
 
 capture program drop twowaysave
-capture mata mata drop projDummies_save()
+capture mata mata drop matasave()
 
 mata
-void projDummies_save()
+void matasave()
 {
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH, var1,var2
@@ -492,7 +492,7 @@ else {
 *create the new list of macros
 ereturn clear
 ereturn post, esample(`touse_save')
-mata projDummies_save()
+mata matasave()
 ereturn local absorb "`newid' `newt'"
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
@@ -513,10 +513,10 @@ else {
 end
 
 capture program drop twowayload
-capture mata mata drop projDummies_load()
+capture mata mata drop mataload()
 
 mata
-void projDummies_load()
+void mataload()
 {
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH
@@ -570,7 +570,7 @@ end
 program define twowayload, eclass
 version 11
 syntax [using/] [if] [in]
-mata projDummies_load()
+mata mataload()
 *tokenize the names of the fixed effects
 gettoken twoway_id: newid
 gettoken twoway_t: newt
