@@ -1,6 +1,7 @@
 capture program drop twowayregwrap
 capture program drop twowayset
 capture mata mata drop sparse()
+capture mata mata drop excludemissing()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
 capture mata mata drop diagminus()
@@ -17,7 +18,7 @@ real matrix sparse(real matrix x)
   real matrix y
   real scalar k
  
-  y = J(colmax(x[,1]),colmax(x[,2]),0)
+  y = J(colmax(x[,1]),colmax(x[,2]),0) 
   for (k=1; k<=rows(x); k++) {
     y[x[k,1],x[k,2]] = y[x[k,1],x[k,2]] + x[k,3]
   }
@@ -26,6 +27,7 @@ real matrix sparse(real matrix x)
  }
  
   //sparse matrix function ends
+  
 
  // multiplying a diagonal matrix represented by a vector times a matrix.
  // Diag*A multiplies each rows.
@@ -119,7 +121,7 @@ DD=quadrowsum(DH1)
 HH=quadcolsum(DH1)'
 HH=HH[1..cols(DH1)-1]
 DH=DH1[.,1..cols(DH1)-1]
-
+st_matrix("e(DH1)",DH1)
 invDD=DD:^-1 
 invHH=HH:^-1
 
@@ -198,6 +200,7 @@ gettoken twoway_t twoway_w: aux
 	*if and in options to twowayset
 	tempvar touse_set
 	mark `touse_set' `if' `in'
+	markout `touse_set' `varlist'
 	*Discard the observations with negative weights
 	if !("`twoway_w'"==""){
 	replace `twoway_w' = . if `twoway_w'<=0
@@ -230,14 +233,14 @@ gettoken twoway_t twoway_w: aux
 		}
 		
 		tempvar var1 var2
-		local var1 = "`twoway_id'"
+		local var1  "`twoway_id'"
 		local var2  "`twoway_t'"
 	}
 	else{
 		*if the fixed effects are not consecutive the user has to create new variables to be used to create D matrix
 		gettoken var1 var2: generate
-		egen `var1'= group(`twoway_id')
-		egen `var2'= group(`twoway_t')
+		egen `var1'= group(`twoway_id') if `touse_set2'==1
+		egen `var2'= group(`twoway_t') if `touse_set2'==1
 		
 		}
 	ereturn local absorb "`var1' `var2' `twoway_w'"
