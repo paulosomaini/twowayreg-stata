@@ -5,7 +5,7 @@ capture mata mata drop excludemissing()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
 capture mata mata drop diagminus()
-capture mata mata drop projDummies()
+ capture mata mata drop projDummies()
 capture mata mata drop saveMat()
 capture mata mata drop readMat()
 
@@ -94,8 +94,7 @@ fclose(fh)
   return(-A)
  }
  
- 
- 
+
  void projDummies()
 {
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
@@ -103,7 +102,6 @@ real colvector DD, HH, invDD, invHH
 real scalar N, T
 string scalar newid,newt,w,sampleVarName
 D=.
-
 newid=st_local("var1")
 newt=st_local("var2")
 w = st_local("twoway_w")
@@ -116,18 +114,17 @@ else {
 D = st_data(.,(newid,newt,w),sampleVarName)
 }
 
+
 DH1=sparse(D)
 DD=quadrowsum(DH1)
 HH=quadcolsum(DH1)'
 HH=HH[1..cols(DH1)-1]
 DH=DH1[.,1..cols(DH1)-1]
-st_matrix("e(DH1)",DH1)
 invDD=DD:^-1 
 invHH=HH:^-1
 
 N=colmax(D)[.,1]
 T=colmax(D)[.,2]
-
 st_numscalar("e(dimN)",N)
 st_numscalar("e(dimT)",T)
 st_matrix("e(invDD)",invDD)
@@ -238,10 +235,12 @@ gettoken twoway_t twoway_w: aux
 	}
 	else{
 		*if the fixed effects are not consecutive the user has to create new variables to be used to create D matrix
+		qui{
 		gettoken var1 var2: generate
 		egen `var1'= group(`twoway_id') if `touse_set2'==1
 		egen `var2'= group(`twoway_t') if `touse_set2'==1
-		
+	
+		}		
 		}
 	ereturn local absorb "`var1' `var2' `twoway_w'"
 	mata projDummies()
