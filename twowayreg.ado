@@ -102,6 +102,9 @@ real colvector DD, HH, invDD, invHH
 real scalar N, T
 string scalar newid,newt,w,sampleVarName
 D=.
+root=st_local("using")
+helper=st_local("helper")
+helperbis=st_local("helperbis")
 newid=st_local("var1")
 newt=st_local("var2")
 w = st_local("twoway_w")
@@ -127,8 +130,19 @@ N=colmax(D)[.,1]
 T=colmax(D)[.,2]
 st_numscalar("e(dimN)",N)
 st_numscalar("e(dimT)",T)
-st_matrix("e(invDD)",invDD)
-st_matrix("e(invHH)",invHH) 
+
+if (helper<helperbis){
+	st_matrix("e(invDD)",invDD)
+	st_matrix("e(invHH)",invHH) 
+
+}
+else
+{
+	saveMat(root,"twoWayN1", N)
+	saveMat(root,"twoWayN2", T)
+	saveMat(root,"twoWayinvDD", invDD)
+	saveMat(root,"twoWayinvHH", invHH)
+}
 
 if (N<T)
 		{
@@ -137,10 +151,17 @@ if (N<T)
 		A=qrinv(diagminus(DD,CinvHHDH'*DH'))
 		//st_matrix("CinvHHDH",CinvHHDH)
         B=-A*CinvHHDH'
-		st_matrix("e(CinvHHDH)",CinvHHDH)
-		st_matrix("e(A)",A)
-		st_matrix("e(B)",B)
-		
+		if (helper<helperbis){
+			st_matrix("e(CinvHHDH)",CinvHHDH)
+			st_matrix("e(A)",A)
+			st_matrix("e(B)",B)
+		}
+		else{
+			saveMat(root,"twoWayCinvHHDH", CinvHHDH)
+			saveMat(root,"twoWayA", A)
+			saveMat(root,"twoWayB", B)
+		}		
+			
 		
 		}
     else
@@ -149,9 +170,18 @@ if (N<T)
 		C=qrinv(diagminus(HH,AinvDDDH'*DH))
 		//st_matrix("AinvDDDH",AinvDDDH)
         B=-AinvDDDH*C
-		st_matrix("e(AinvDDDH)",AinvDDDH)
-		st_matrix("e(C)",C)
-		st_matrix("e(B)",B)
+
+		if (helper<helperbis){
+			st_matrix("e(AinvDDDH)",AinvDDDH)
+			st_matrix("e(C)",C)
+			st_matrix("e(B)",B)
+		}
+		else{
+			saveMat(root,"twoWayAinvDDDH", AinvDDDH)
+			saveMat(root,"twoWayC", C)
+			saveMat(root,"twoWayB", B)
+		}		
+			
 
 		
     }
@@ -189,7 +219,7 @@ end
 
 program define twowayset, eclass sortpreserve
 version 11
-syntax varlist(min=2 max=3) [if] [in], [GENerate(namelist min=2 max=2) Nogen]
+syntax varlist(min=2 max=3) [if] [in] [using/], [GENerate(namelist min=2 max=2) Nogen] 
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 
@@ -243,6 +273,17 @@ gettoken twoway_t twoway_w: aux
 		}		
 		}
 	ereturn local absorb "`var1' `var2' `twoway_w'"
+	
+capt assert inlist( "`using/'", "")
+if !_rc {    
+	local helper=0
+	local helperbis=1
+}
+else{
+	local helper=1
+	local helperbis=0
+}
+
 	mata projDummies()
 	drop `touse_set'
 	
@@ -263,12 +304,13 @@ void projVar()
 	real colvector invHH,invDD,Dy,Ty
 	real scalar N,T
 	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2
+	root=st_local("using")
+	helper=st_local("helper")
+	helperbis=st_local("helperbis")
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
 	var1 = st_local("var1")
 	var2 = st_local("var2")
-	N=st_numscalar("e(dimN)")
-	T=st_numscalar("e(dimT)")
 	
 	w=st_local("w")
 	sampleVarName = st_local("touse_proj")
@@ -291,23 +333,45 @@ void projVar()
 	Dy=Dy
 	Ty=colsum(aux)
 	Ty=Ty[1,1..cols(aux)-1]'
-	B=st_matrix("e(B)")
-			
+	N=st_numscalar("e(dimN)")
+	T=st_numscalar("e(dimT)")
+	if (helper<helperbis){
+
+		B=st_matrix("e(B)")
+	}
+	else{
+		N=readMat(root,"twoWayN1")
+		T=readMat(root,"twoWayN2")
+		B=readMat(root,"twoWayB")
+	}
 
 	 if (N<T)
 			{
-			
-			A=st_matrix("e(A)")
-			invHH=st_matrix("e(invHH)")
-			CinvHHDH=st_matrix("e(CinvHHDH)")
+			if (helper<helperbis){
+				A=st_matrix("e(A)")
+				invHH=st_matrix("e(invHH)")
+				CinvHHDH=st_matrix("e(CinvHHDH)")
+			}
+			else{
+				A=readMat(root,"twoWayA")
+				invHH=readMat(root,"twoWayinvHH")
+				CinvHHDH=readMat(root,"twoWayCinvHHDH")
+			}
 			delta=A*Dy+B*Ty
 			tau=B'*(Dy-CinvHHDH'*Ty)+(invHH:*Ty) \0
 			}
 		else
 		{
-			C=st_matrix("e(C)")
-			invDD=st_matrix("e(invDD)")
-			AinvDDDH=st_matrix("e(AinvDDDH)")
+			if (helper<helperbis){
+				C=st_matrix("e(C)")
+				invDD=st_matrix("e(invDD)")
+				AinvDDDH=st_matrix("e(AinvDDDH)")
+			}
+			else{
+				C=readMat(root,"twoWayC")
+				invDD=readMat(root,"twoWayinvDD")
+				AinvDDDH=readMat(root,"twoWayAinvDDDH")
+			}
 			delta=(invDD:*Dy)+B*(Ty-AinvDDDH'*Dy)
 			tau=B'*Dy+C*Ty \0 
 		}
@@ -322,7 +386,7 @@ end
 
 program define projvar, nclass
 version 11
-syntax varlist, [Prefix(name)] [REPLACE]
+syntax varlist [using/], [Prefix(name)] [REPLACE]
 	
 	*in e(absorb) there is the fixed effects that we use to generate the new matrix V
 	local absorb = "`e(absorb)'"
@@ -354,7 +418,15 @@ syntax varlist, [Prefix(name)] [REPLACE]
 	}
 	drop `touse_check'
 	
-	
+	capt assert inlist( "`using/'", "")
+	if !_rc {    
+		local helper=0
+		local helperbis=1
+	}
+	else{
+		local helper=1
+		local helperbis=0
+	}
 	*variable created to store only the observations that are non-missings and in that way the arrays are conformables
 	gen `linear_index' = _n	
 	
@@ -380,20 +452,23 @@ syntax varlist, [Prefix(name)] [REPLACE]
 
 drop `linear_index'
 *save in scalars and arrays the macros.
-scalar dimN= e(dimN)
-scalar dimT= e(dimT)
-matrix invDD=e(invDD)
-matrix invHH=e(invHH)
-if (dimN<dimT){
-	matrix CinvHHDH=e(CinvHHDH)
-	matrix A= e(A)
-	matrix B=e(B)
-}
-else {
-	matrix AinvDDDH=e(AinvDDDH)
-	matrix C= e(C)
-	matrix B=e(B)
-}
+	capt assert inlist( "`using/'", "")
+	if !_rc {  
+		scalar dimN= e(dimN)
+		scalar dimT= e(dimT)
+		matrix invDD=e(invDD)
+		matrix invHH=e(invHH)
+		if (dimN<dimT){
+			matrix CinvHHDH=e(CinvHHDH)
+			matrix A= e(A)
+			matrix B=e(B)
+			}
+		else {
+			matrix AinvDDDH=e(AinvDDDH)
+			matrix C= e(C)
+			matrix B=e(B)
+			}
+		}
 
 
 end
@@ -634,7 +709,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 11
  
-    syntax varlist(numeric ts fv),[,ROBUST VCE(namelist) statadof] 
+    syntax varlist(numeric ts fv), [,saved] [,ROBUST VCE(namelist) statadof] 
 	local absorb = "`e(absorb)'"
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
@@ -646,18 +721,21 @@ program define twowayreg, eclass sortpreserve
 	}
 	scalar dimN= e(dimN)
 	scalar dimT= e(dimT)
-	matrix invDD=e(invDD)
-	matrix invHH=e(invHH)
-	if (dimN<dimT){
-		matrix CinvHHDH=e(CinvHHDH)
-		matrix A= e(A)
-		matrix B=e(B)
+	if ("`saved'"!="saved"){
+		matrix invDD=e(invDD)
+		matrix invHH=e(invHH)
+		if (dimN<dimT){
+			matrix CinvHHDH=e(CinvHHDH)
+			matrix A= e(A)
+			matrix B=e(B)
+		}
+		else {
+			matrix AinvDDDH=e(AinvDDDH)
+			matrix C= e(C)
+			matrix B=e(B)
+		}	
 	}
-	else {
-		matrix AinvDDDH=e(AinvDDDH)
-		matrix C= e(C)
-		matrix B=e(B)
-	}
+	
 	
 	
    if ("`robust'"=="robust"){
@@ -704,13 +782,14 @@ program define twowayreg, eclass sortpreserve
 	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT)
 	}
   }
-	mat b=e(b)
+	matrix b=e(b)
 	scalar N_1=e(N)
 	scalar R2= e(r2)
 	scalar F= e(F)
 	scalar df_m= e(df_m)
 	scalar rtms= e(rmse)
 	matrix V = vadj*e(V)
+	
 
   *table of regression with standar errors with dof correction
   eret post b V, esample(`touse_reg')
@@ -724,18 +803,20 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar rtms= rtms
   ereturn scalar dimN= dimN
   ereturn scalar dimT= dimT
-  ereturn matrix invDD= invDD
-  ereturn matrix invHH= invHH
-  if (dimN<dimT){
-	ereturn matrix CinvHHDH=CinvHHDH
-	ereturn matrix A= A
-	ereturn matrix B= B
- }
-else {
-	ereturn matrix AinvDDDH=AinvDDDH
-	ereturn matrix C= C
-	ereturn matrix B= B
-}
+  if ("`saved'"!="saved"){
+	  ereturn matrix invDD= invDD
+	  ereturn matrix invHH= invHH
+	  if (dimN<dimT){
+		ereturn matrix CinvHHDH=CinvHHDH
+		ereturn matrix A= A
+		ereturn matrix B= B
+	 }
+	else {
+		ereturn matrix AinvDDDH=AinvDDDH
+		ereturn matrix C= C
+		ereturn matrix B= B
+	}
+  }
   *table display
   display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
   display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
