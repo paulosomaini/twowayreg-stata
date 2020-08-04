@@ -99,12 +99,11 @@ fclose(fh)
 {
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
-real scalar N, T
+real scalar N, T, save_to_e
 string scalar newid,newt,w,sampleVarName
 D=.
 root=st_local("using")
-save_to_e=st_local("save_to_e")
-
+save_to_e=st_numscalar("save_to_e")
 newid=st_local("var1")
 newt=st_local("var2")
 w = st_local("twoway_w")
@@ -276,13 +275,13 @@ gettoken twoway_t twoway_w: aux
 	
 capt assert inlist( "`using/'", "")
 if !_rc {    
-	local save_to_e=1
+	scalar save_to_e=1
 }
 else{
-	local save_to_e=0
+	scalar save_to_e=0
 }
 
-
+disp "`save_to_e'"
 	mata projDummies()
 	drop `touse_set'
 	
@@ -304,8 +303,7 @@ void projVar()
 	real scalar N,T
 	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2
 	root=st_local("using")
-	save_to_e=st_local("save_to_e")
-	
+	save_to_e=st_numscalar("save_to_e")
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
 	var1 = st_local("var1")
@@ -419,10 +417,10 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 	
 	capt assert inlist( "`using/'", "")
 	if !_rc {    
-		local save_to_e=1
+		scalar save_to_e=1
 	}
 	else{
-		local save_to_e=0
+		scalar save_to_e=0
 	}
 	*variable created to store only the observations that are non-missings and in that way the arrays are conformables
 	gen `linear_index' = _n	
