@@ -244,6 +244,8 @@ gettoken twoway_t twoway_w: aux
 }
 
 	*option nogen to not generate extra fixed effects, this command is useful if the fixed effects are consecutives
+	*capt assert inlist( "`generate'", "")
+	*if !_rc { 
 	if ("`nogen'"=="nogen"){
 		sort `twoway_id' `twoway_t'
 		qui{
@@ -704,7 +706,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 11
  
-    syntax varlist(numeric ts fv), [,saved] [,ROBUST VCE(namelist) statadof] 
+    syntax varlist(numeric ts fv),  [,ROBUST VCE(namelist) statadof] 
 	local absorb = "`e(absorb)'"
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
@@ -830,7 +832,7 @@ end
 
 program define twowayregwrap, eclass sortpreserve
 version 11
-syntax varlist(numeric ts fv) [if] [in], [,ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
+syntax varlist(numeric ts fv) [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
 gettoken depvar indepvars : varlist
 
 
@@ -841,6 +843,8 @@ gettoken depvar indepvars : varlist
 	markout `touse_wrap' `varlist'
 	}
 if ("`noproj'"=="" & "`nogen'"=="nogen"){
+	capt assert inlist( "`using'", "")
+	if !_rc { 
 	*make the whole regression without creating new fixed effects
 	twowayset `absorb' if `touse_wrap', nogen
 	gettoken twoway_id twoway_t : absorb
@@ -862,10 +866,35 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 		twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
 		
 	}
+	}
+	else{
+		*make the whole regression without creating new fixed effects
+		twowayset `absorb' if `touse_wrap' using "`using'", nogen
+		gettoken twoway_id twoway_t : absorb
+		if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
+			capture confirm variable `newvars'
+			if !_rc {
+					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+					}
+			else {
+				  projvar `depvar' `indepvars' using "`using'", p(`newvars')
+				  twowayreg `newvars'* , vce(`vce') `statadof'
+				  }
+					
+		}
+		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
+			projvar `depvar' `indepvars' using "`using'", replace
+			twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
+			
+	}
+		
+	}
 }	
 if ("`noproj'"=="" & "`nogen'"==""){
+	capt assert inlist( "`using/'", "")
+	if !_rc {
 	*make the whole regression creating new fixed effects
-	twowayset `absorb' if `touse_wrap', gen(`generate')
+	twowayset `absorb' if `touse_wrap' , gen(`generate')
 	gettoken twoway_new_id twoway_new_t : generate
 
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
@@ -883,7 +912,32 @@ if ("`noproj'"=="" & "`nogen'"==""){
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		projvar `depvar' `indepvars', replace
-		twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
+		twowayreg `depvar' `indepvars' if `touse_wrap' , vce(`vce') `statadof'
+		
+	}
+	}
+	else{
+		twowayset `absorb' if `touse_wrap' using "`using'", gen(`generate')
+		gettoken twoway_new_id twoway_new_t : generate
+
+		 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
+			capture confirm variable `newvars'
+			if !_rc {
+					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
+					}
+			else {
+				  projvar `depvar' `indepvars' using "`using'", p(`newvars')
+				  twowayreg `newvars'* , vce(`vce') `statadof'
+				  }
+					
+		}
+			
+			
+		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
+			projvar `depvar' `indepvars' using "`using'", replace
+			twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
+			
+	}
 		
 	}
 }	
@@ -893,7 +947,6 @@ else if ("`noproj'"=="noproj"){
 	gettoken twoway_id aux: absorb
 	gettoken twoway_t w: aux
 
-	
 	twowayreg `depvar' `indepvars', vce(`vce') `statadof'
 }
 
