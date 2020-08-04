@@ -103,8 +103,8 @@ real scalar N, T
 string scalar newid,newt,w,sampleVarName
 D=.
 root=st_local("using")
-helper=st_local("helper")
-helperbis=st_local("helperbis")
+save_to_e=st_local("save_to_e")
+save_to_e_bis=st_local("save_to_e_bis")
 newid=st_local("var1")
 newt=st_local("var2")
 w = st_local("twoway_w")
@@ -131,7 +131,7 @@ T=colmax(D)[.,2]
 st_numscalar("e(dimN)",N)
 st_numscalar("e(dimT)",T)
 
-if (helper<helperbis){
+if (save_to_e<save_to_e_bis){
 	st_matrix("e(invDD)",invDD)
 	st_matrix("e(invHH)",invHH) 
 
@@ -151,7 +151,7 @@ if (N<T)
 		A=qrinv(diagminus(DD,CinvHHDH'*DH'))
 		//st_matrix("CinvHHDH",CinvHHDH)
         B=-A*CinvHHDH'
-		if (helper<helperbis){
+		if (save_to_e<save_to_e_bis){
 			st_matrix("e(CinvHHDH)",CinvHHDH)
 			st_matrix("e(A)",A)
 			st_matrix("e(B)",B)
@@ -171,7 +171,7 @@ if (N<T)
 		//st_matrix("AinvDDDH",AinvDDDH)
         B=-AinvDDDH*C
 
-		if (helper<helperbis){
+		if (save_to_e<save_to_e_bis){
 			st_matrix("e(AinvDDDH)",AinvDDDH)
 			st_matrix("e(C)",C)
 			st_matrix("e(B)",B)
@@ -276,13 +276,14 @@ gettoken twoway_t twoway_w: aux
 	
 capt assert inlist( "`using/'", "")
 if !_rc {    
-	local helper=0
-	local helperbis=1
+	local save_to_e=0
+	local save_to_e_bis=1
 }
 else{
-	local helper=1
-	local helperbis=0
+	local save_to_e=1
+	local save_to_e_bis=0
 }
+
 
 	mata projDummies()
 	drop `touse_set'
@@ -305,8 +306,8 @@ void projVar()
 	real scalar N,T
 	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2
 	root=st_local("using")
-	helper=st_local("helper")
-	helperbis=st_local("helperbis")
+	save_to_e=st_local("save_to_e")
+	save_to_e_bis=st_local("save_to_e_bis")
 	currvar = st_local("currvar")
 	newvar = st_local("newvar")
 	var1 = st_local("var1")
@@ -335,7 +336,7 @@ void projVar()
 	Ty=Ty[1,1..cols(aux)-1]'
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
-	if (helper<helperbis){
+	if (save_to_e<save_to_e_bis){
 
 		B=st_matrix("e(B)")
 	}
@@ -347,7 +348,7 @@ void projVar()
 
 	 if (N<T)
 			{
-			if (helper<helperbis){
+			if (save_to_e<save_to_e_bis){
 				A=st_matrix("e(A)")
 				invHH=st_matrix("e(invHH)")
 				CinvHHDH=st_matrix("e(CinvHHDH)")
@@ -362,7 +363,7 @@ void projVar()
 			}
 		else
 		{
-			if (helper<helperbis){
+			if (save_to_e<save_to_e_bis){
 				C=st_matrix("e(C)")
 				invDD=st_matrix("e(invDD)")
 				AinvDDDH=st_matrix("e(AinvDDDH)")
@@ -420,12 +421,12 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 	
 	capt assert inlist( "`using/'", "")
 	if !_rc {    
-		local helper=0
-		local helperbis=1
+		local save_to_e=0
+		local save_to_e_bis=1
 	}
 	else{
-		local helper=1
-		local helperbis=0
+		local save_to_e=1
+		local save_to_e_bis=0
 	}
 	*variable created to store only the observations that are non-missings and in that way the arrays are conformables
 	gen `linear_index' = _n	
@@ -721,7 +722,8 @@ program define twowayreg, eclass sortpreserve
 	}
 	scalar dimN= e(dimN)
 	scalar dimT= e(dimT)
-	if ("`saved'"!="saved"){
+	capt confirm matrix B
+	if !_rc { 
 		matrix invDD=e(invDD)
 		matrix invHH=e(invHH)
 		if (dimN<dimT){
@@ -803,7 +805,8 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar rtms= rtms
   ereturn scalar dimN= dimN
   ereturn scalar dimT= dimT
-  if ("`saved'"!="saved"){
+	capt confirm matrix B
+	if !_rc { 
 	  ereturn matrix invDD= invDD
 	  ereturn matrix invHH= invHH
 	  if (dimN<dimT){
