@@ -100,7 +100,7 @@ fclose(fh)
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
 real scalar N, T, save_to_e
-string scalar newid,newt,w,sampleVarName
+string scalar newid,newt,w,sampleVarName, root
 D=.
 root=st_local("using")
 save_to_e=st_numscalar("save_to_e")
@@ -283,7 +283,6 @@ else{
 	scalar save_to_e=0
 }
 
-disp "`save_to_e'"
 	mata projDummies()
 	drop `touse_set'
 	
@@ -760,13 +759,13 @@ program define twowayreg, eclass sortpreserve
 	*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
    qui{
   	regress `depvar' `indepvars' , noc vce(`vce')
-	scalar N_1=e(N)
+	scalar N=e(N)
 	scalar df_m= e(df_m)
 	qui{
 		scalar df_r= e(N)-e(df_m)-1
 	}
 	scalar df_r1= e(df_r)
-	scalar vadj = (N_1-1)*(df_r/(df_r - 1))/(N_1 - df_m - 1)
+	scalar vadj = (N-1)*(df_r/(df_r - 1))/(N - df_m - 1)
 	    }
 
  
@@ -781,7 +780,7 @@ program define twowayreg, eclass sortpreserve
 	}
   }
 	matrix b=e(b)
-	scalar N_1=e(N)
+	scalar N=e(N)
 	scalar R2= e(r2)
 	scalar F= e(F)
 	scalar df_m= e(df_m)
@@ -793,7 +792,7 @@ program define twowayreg, eclass sortpreserve
   eret post b V, esample(`touse_reg')
   *macros 
   ereturn local absorb "`absorb'"
-  ereturn scalar N_1= N_1
+  ereturn scalar N= N
   ereturn scalar R2= R2
   ereturn scalar F= F
   ereturn scalar df_m=df_m
@@ -817,7 +816,7 @@ program define twowayreg, eclass sortpreserve
 	}
   }
   *table display
-  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N_1
+  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N
   display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
   display _col(45) "R-squared" _col(60)"="  _col(65) R2
   display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
