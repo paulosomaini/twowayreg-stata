@@ -147,8 +147,7 @@ if (N<T)
 		{
         
         CinvHHDH=diagprod(invHH,DH')
-		A=qrinv(diagminus(DD,CinvHHDH'*DH'))
-		//st_matrix("CinvHHDH",CinvHHDH)
+		A=invsym(diagminus(DD,CinvHHDH'*DH'))
         B=-A*CinvHHDH'
 		if (save_to_e>0){
 			st_matrix("e(CinvHHDH)",CinvHHDH)
@@ -166,7 +165,7 @@ if (N<T)
     else
 	{
         AinvDDDH=diagprod(invDD,DH)
-		C=qrinv(diagminus(HH,AinvDDDH'*DH))
+		C=invsym((diagminus(HH,AinvDDDH'*DH)))
 		//st_matrix("AinvDDDH",AinvDDDH)
         B=-AinvDDDH*C
 
