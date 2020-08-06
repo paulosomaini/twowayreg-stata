@@ -413,13 +413,37 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 	}
 	drop `touse_check'
 	
+	*check if e() has not been rewritten
+	capt confirm scalar e(dimN)
+	if _rc { 
+	   di "{err} The e() has been rewritten, please run twowayset again."
+	   exit
+	}
+	
+	*check that there is using in the command or not.
 	capt assert inlist( "`using/'", "")
 	if !_rc {    
 		scalar save_to_e=1
-	}
+			*save in scalars and arrays the macros.
+			scalar dimN= e(dimN)
+			scalar dimT= e(dimT)
+			matrix invDD=e(invDD)
+			matrix invHH=e(invHH)
+			if (dimN<dimT){
+				matrix CinvHHDH=e(CinvHHDH)
+				matrix A= e(A)
+				matrix B=e(B)
+				}
+			else{
+				matrix AinvDDDH=e(AinvDDDH)
+				matrix C= e(C)
+				matrix B=e(B)
+				}
+		
+		}
 	else{
 		scalar save_to_e=0
-	}
+		}
 	*variable created to store only the observations that are non-missings and in that way the arrays are conformables
 	gen `linear_index' = _n	
 	
@@ -444,24 +468,7 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 	}
 
 drop `linear_index'
-*save in scalars and arrays the macros.
-	capt assert inlist( "`using/'", "")
-	if !_rc {  
-		scalar dimN= e(dimN)
-		scalar dimT= e(dimT)
-		matrix invDD=e(invDD)
-		matrix invHH=e(invHH)
-		if (dimN<dimT){
-			matrix CinvHHDH=e(CinvHHDH)
-			matrix A= e(A)
-			matrix B=e(B)
-			}
-		else {
-			matrix AinvDDDH=e(AinvDDDH)
-			matrix C= e(C)
-			matrix B=e(B)
-			}
-		}
+		
 
 
 end
@@ -707,14 +714,23 @@ program define twowayreg, eclass sortpreserve
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
     fvexpand `indepvars'
-
+	
 	qui{
 	tempvar touse_reg
 	gen byte `touse_reg'= e(sample)
 	}
+	
+	*check if e() has not been rewritten
+	capt confirm scalar e(dimN)
+	if _rc { 
+	   di "{err} The e() has been rewritten, please run twowayset again."
+	   exit
+	}
+	
+	*save the macros in scalars and arrays
 	scalar dimN= e(dimN)
 	scalar dimT= e(dimT)
-	capt confirm matrix B
+	capt confirm matrix invDD
 	if !_rc { 
 		matrix invDD=e(invDD)
 		matrix invHH=e(invHH)
@@ -797,7 +813,7 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar rtms= rtms
   ereturn scalar dimN= dimN
   ereturn scalar dimT= dimT
-	capt confirm matrix B
+	capt confirm matrix invDD
 	if !_rc { 
 	  ereturn matrix invDD= invDD
 	  ereturn matrix invHH= invHH
