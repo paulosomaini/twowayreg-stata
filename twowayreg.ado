@@ -116,7 +116,6 @@ else {
 D = st_data(.,(newid,newt,w),sampleVarName)
 }
 
-
 DH1=sparse(D)
 DD=quadrowsum(DH1)
 HH=quadcolsum(DH1)'
@@ -243,9 +242,8 @@ gettoken twoway_t twoway_w: aux
 }
 
 	*option nogen to not generate extra fixed effects, this command is useful if the fixed effects are consecutives
-	*capt assert inlist( "`generate'", "")
-	*if !_rc { 
-	if ("`nogen'"=="nogen"){
+	capt assert inlist( "`generate'", "")
+	if !_rc { 
 		sort `twoway_id' `twoway_t'
 		qui{
 			tempvar check1
@@ -830,7 +828,7 @@ end
 
 program define twowayregwrap, eclass sortpreserve
 version 11
-syntax varlist(numeric ts fv) [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOGEN NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
+syntax varlist(numeric ts fv) [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
 gettoken depvar indepvars : varlist
 
 
@@ -840,7 +838,9 @@ gettoken depvar indepvars : varlist
 	mark `touse_wrap' `if' `in'
 	markout `touse_wrap' `varlist'
 	}
-if ("`noproj'"=="" & "`nogen'"=="nogen"){
+if ("`noproj'"==""){
+    capt assert inlist( "`generate'", "")
+	if !_rc { 
 	capt assert inlist( "`using'", "")
 	if !_rc { 
 	*make the whole regression without creating new fixed effects
@@ -887,8 +887,9 @@ if ("`noproj'"=="" & "`nogen'"=="nogen"){
 	}
 		
 	}
-}	
-if ("`noproj'"=="" & "`nogen'"==""){
+
+	}
+	else{
 	capt assert inlist( "`using/'", "")
 	if !_rc {
 	*make the whole regression creating new fixed effects
@@ -939,7 +940,7 @@ if ("`noproj'"=="" & "`nogen'"==""){
 		
 	}
 }	
-
+}
 else if ("`noproj'"=="noproj"){
 	*option just to make the regression without setting the fixed effects or projecting varlist
 	gettoken twoway_id aux: absorb
