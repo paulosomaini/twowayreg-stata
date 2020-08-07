@@ -300,8 +300,8 @@ void projVar()
 {
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
 	real colvector invHH,invDD,Dy,Ty
-	real scalar N,T, correction_rank 
-	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2
+	real scalar N,T, correction_rank, save_to_e
+	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2, root
 	root=st_local("using")
 	save_to_e=st_numscalar("save_to_e")
 	currvar = st_local("currvar")
@@ -607,7 +607,7 @@ void mataload()
 {
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH
-real scalar N, T
+real scalar N, T, correction_rank
 string scalar newid,newt, w,sampleVarName, root
 
 root =st_local("using")
