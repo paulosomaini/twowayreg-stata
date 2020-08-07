@@ -99,7 +99,7 @@ fclose(fh)
 {
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
-real scalar N, T, save_to_e
+real scalar N, T, save_to_e,corection_rank 
 string scalar newid,newt,w,sampleVarName, root
 D=.
 root=st_local("using")
@@ -147,6 +147,7 @@ if (N<T)
         
         CinvHHDH=diagprod(invHH,DH')
 		A=invsym(diagminus(DD,CinvHHDH'*DH'))
+		corection_rank= N-rank(A)
         B=-A*CinvHHDH'
 		if (save_to_e>0){
 			st_matrix("e(CinvHHDH)",CinvHHDH)
@@ -165,7 +166,7 @@ if (N<T)
 	{
         AinvDDDH=diagprod(invDD,DH)
 		C=invsym((diagminus(HH,AinvDDDH'*DH)))
-		//st_matrix("AinvDDDH",AinvDDDH)
+		corection_rank= T-rank(C)
         B=-AinvDDDH*C
 
 		if (save_to_e>0){
@@ -182,6 +183,7 @@ if (N<T)
 
 		
     }
+st_numscalar("e(rank_adj)",corection_rank)
  }
  
  end
@@ -298,7 +300,7 @@ void projVar()
 {
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
 	real colvector invHH,invDD,Dy,Ty
-	real scalar N,T
+	real scalar N,T, correction_rank 
 	string scalar newid, newt, currvar,newvar,sampleVarName,w,linear_index,var1,var2
 	root=st_local("using")
 	save_to_e=st_numscalar("save_to_e")
@@ -330,6 +332,7 @@ void projVar()
 	Ty=Ty[1,1..cols(aux)-1]'
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
+	correction_rank=st_numscalar("e(rank_adj)")
 	if (save_to_e>0){
 
 		B=st_matrix("e(B)")
@@ -427,6 +430,7 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 			*save in scalars and arrays the macros.
 			scalar dimN= e(dimN)
 			scalar dimT= e(dimT)
+			scalar rank_adj=e(rank_adj)
 			matrix invDD=e(invDD)
 			matrix invHH=e(invHH)
 			if (dimN<dimT){
@@ -481,7 +485,7 @@ void matasave()
 {
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH, var1,var2
-real scalar N, T
+real scalar N, T,correction_rank
 string scalar newid,newt, w,sampleVarName, root
 
 
@@ -494,10 +498,12 @@ w=st_local("twoway_w")
 st_local("w",w)
 N=st_numscalar("dimN")
 T=st_numscalar("dimT")
+correction_rank=st_numscalar("rank_adj")
 invDD=st_matrix("invDD")
 invHH=st_matrix("invHH") 
 saveMat(root,"twoWayVar1", newid)
 saveMat(root,"twoWayVar2", newt)
+saveMat(root,"twoWayCorrection",correction_rank)
 saveMat(root,"twoWayW",w)
 saveMat(root,"twoWayN1", N)
 saveMat(root,"twoWayN2", T)
@@ -554,6 +560,7 @@ gen byte `touse_save'= e(sample)
 *create the scalars that are store in e()
 scalar dimN= e(dimN)
 scalar dimT=e(dimT)
+scalar rank_adj=e(rank_adj)
 matrix invDD=e(invDD)
 matrix invHH=e(invHH)
 
@@ -575,6 +582,7 @@ mata matasave()
 ereturn local absorb "`newid' `newt' `w'"
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
+ereturn scalar rank_adj=rank_adj
 ereturn matrix invDD= invDD
 ereturn matrix invHH= invHH
 if (dimN<dimT){
@@ -613,10 +621,12 @@ st_local("w",w)
 
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
+correction_rank=readMat(root,"twoWayCorrection")
 invDD=readMat(root,"twoWayInvDD")
 invHH=readMat(root,"twoWayInvHH")
 st_numscalar("e(dimN)",N)
 st_numscalar("e(dimT)",T)
+st_numscalar("e(rank_adj)",correction_rank)
 st_matrix("e(invDD)",invDD)
 st_matrix("e(invHH)",invHH) 
 
@@ -670,6 +680,7 @@ gettoken twoway_w: w
 *save the arrays, scalars obtained in ProjDummies_load()
 scalar dimN= e(dimN)
 scalar dimT=e(dimT)
+scalar rank_adj=e(rank_adj)
 matrix invDD=e(invDD)
 matrix invHH=e(invHH)
 
@@ -688,6 +699,7 @@ ereturn local absorb "`newid' `newt' `w'"
 *store the arrays and scalars in e()
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
+ereturn scalar rank_adj=rank_adj
 ereturn matrix invDD= invDD
 ereturn matrix invHH= invHH
 if (dimN<dimT){
@@ -730,6 +742,7 @@ program define twowayreg, eclass sortpreserve
 	*save the macros in scalars and arrays
 	scalar dimN= e(dimN)
 	scalar dimT= e(dimT)
+	scalar rank_adj=e(rank_adj)
 	capt confirm matrix invDD
 	if !_rc { 
 		matrix invDD=e(invDD)
@@ -752,7 +765,7 @@ program define twowayreg, eclass sortpreserve
    *standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation    
    	qui{
   	regress `depvar' `indepvars' , noc robust
-	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT)
+	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT-rank_adj)
 	scalar df_r1= e(df_r) - dimN - dimT
     }
  }
@@ -764,7 +777,7 @@ program define twowayreg, eclass sortpreserve
 		scalar df_r= e(N)-e(df_m)-1
 	}
 	scalar df_r1= e(df_r)
-	scalar vadj = df_r/(df_r- dimN - dimT)
+	scalar vadj = df_r/(df_r- dimN - dimT-rank_adj)
 	    }
  }
 
@@ -789,7 +802,7 @@ program define twowayreg, eclass sortpreserve
   qui{
   	regress `depvar' `indepvars'  , noc
 	scalar df_r1= e(df_r)-dimN-dimT
-	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT)
+	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT-rank_adj)
 	}
   }
 	matrix b=e(b)
@@ -813,6 +826,7 @@ program define twowayreg, eclass sortpreserve
   ereturn scalar rtms= rtms
   ereturn scalar dimN= dimN
   ereturn scalar dimT= dimT
+  ereturn scalar rank_adj=rank_adj
 	capt confirm matrix invDD
 	if !_rc { 
 	  ereturn matrix invDD= invDD
