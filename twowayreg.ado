@@ -1,11 +1,12 @@
 capture program drop twowayregwrap
 capture program drop twowayset
+capture program drop nonredundants
 capture mata mata drop sparse()
 capture mata mata drop excludemissing()
 capture mata mata drop proddiag()
 capture mata mata drop diagprod()
 capture mata mata drop diagminus()
- capture mata mata drop projDummies()
+capture mata mata drop projDummies()
 capture mata mata drop saveMat()
 capture mata mata drop readMat()
 
