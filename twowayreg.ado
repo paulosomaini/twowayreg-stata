@@ -768,7 +768,7 @@ program define twowayreg, eclass sortpreserve
    qui{
 	scalar df_r= e(N)-e(df_m)-1
 	scalar df_r1= e(df_r)
-	scalar vadj = df_r/(df_r- dimN - dimT-rank_adj)
+	scalar vadj = df_r/(df_r- dimN - dimT+rank_adj)
 	    }
  }
 

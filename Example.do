@@ -76,7 +76,7 @@ twowayset hid tid
 projvar y x1, p(w_)
 twowayreg w_y w_x1
 projvar x2, p(w_)
-twowayreg w_y w_x*, robust
+twowayreg w_y w_x*, vce(robust)
 drop w_*
 
 twowayregwrap y x*,absorb(hid tid) newv(w_) 
