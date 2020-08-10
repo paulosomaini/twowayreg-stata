@@ -722,7 +722,7 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 11
  
-    syntax varlist(numeric ts fv),  [,ROBUST VCE(namelist) statadof] 
+    syntax varlist(numeric ts fv),  [,VCE(namelist) statadof] 
 	local absorb = "`e(absorb)'"
     gettoken depvar indepvars : varlist
     _fv_check_depvar `depvar'
@@ -759,38 +759,25 @@ program define twowayreg, eclass sortpreserve
 			matrix B=e(B)
 		}	
 	}
-	
-	
-	
-   if ("`robust'"=="robust"){
-   *standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation    
-   	qui{
-  	regress `depvar' `indepvars' , noc robust
-	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT-rank_adj)
-	scalar df_r1= e(df_r) - dimN - dimT
-    }
- }
-    else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== ""){
+	qui{
+	regress `depvar' `indepvars'  , noc vce(`vce')
+	}
+
+    if ("`statadof'"== ""){
 	*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
    qui{
-  	regress `depvar' `indepvars'  , noc vce(`vce')
-	qui{
-		scalar df_r= e(N)-e(df_m)-1
-	}
+	scalar df_r= e(N)-e(df_m)-1
 	scalar df_r1= e(df_r)
 	scalar vadj = df_r/(df_r- dimN - dimT-rank_adj)
 	    }
  }
 
-  else if ("`vce(namelist)'"== "`vce(namelist)'" & "`statadof'"== "statadof"){
+  else if ("`statadof'"== "statadof"){
 	*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
    qui{
-  	regress `depvar' `indepvars' , noc vce(`vce')
 	scalar N=e(N)
 	scalar df_m= e(df_m)
-	qui{
-		scalar df_r= e(N)-e(df_m)-1
-	}
+	scalar df_r= e(N)-e(df_m)-1
 	scalar df_r1= e(df_r)
 	scalar vadj = (N-1)*(df_r/(df_r - 1))/(N - df_m - 1)
 	    }
@@ -798,14 +785,6 @@ program define twowayreg, eclass sortpreserve
  
 }
  
-  else{
-     *standard errors assuming homoscedasticity and no within  group correlation or serial correlation
-  qui{
-  	regress `depvar' `indepvars'  , noc
-	scalar df_r1= e(df_r)-dimN-dimT
-	scalar vadj = e(df_r)/(e(df_r)- dimN - dimT-rank_adj)
-	}
-  }
 	matrix b=e(b)
 	scalar N=e(N)
 	scalar R2= e(r2)
