@@ -74,9 +74,9 @@ use Example2.dta
 *** 2) Run Our procedure
 twowayset hid tid
 projvar y x1, p(w_)
-twowayreg w_y w_x1
+twowayreg reg w_y w_x1
 projvar x2, p(w_)
-twowayreg w_y w_x*, vce(robust)
+twowayreg reg w_y w_x*,vce(robust)
 drop w_*
 
 twowayregwrap y x*,absorb(hid tid) newv(w_) 

@@ -722,11 +722,11 @@ capture program drop twowayreg
 program define twowayreg, eclass sortpreserve
     version 11
  
-    syntax varlist(numeric ts fv),  [,VCE(namelist) statadof] 
+    syntax anything,  [,VCE(namelist) statadof] 
 	local absorb = "`e(absorb)'"
-    gettoken depvar indepvars : varlist
-    _fv_check_depvar `depvar'
-    fvexpand `indepvars'
+*    gettoken depvar indepvars : varlist
+*    _fv_check_depvar `depvar'
+*    fvexpand `indepvars'
 	
 	qui{
 	tempvar touse_reg
@@ -759,10 +759,19 @@ program define twowayreg, eclass sortpreserve
 			matrix B=e(B)
 		}	
 	}
-	qui{
-	regress `depvar' `indepvars'  , noc vce(`vce')
+	*take regtype to make sure that the command only work under certains types of regressions
+	gettoken regtype varlist: anything
+	if ("`regtype'"=="reg" |"`regtype'"=="regress" | "`regtype'"=="ivregress" ){ 
+    qui{    
+	`anything', noc vce(`vce')
+	*regress `depvar' `indepvars'  , noc vce(`vce')
 	}
-
+	}
+	else{
+	    di "{err} the type of regression selected is not compatible for the command"
+	    exit
+	}
+	
     if ("`statadof'"== ""){
 	*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
    qui{
