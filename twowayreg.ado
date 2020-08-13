@@ -855,7 +855,7 @@ if ("`noproj'"==""){
 				}
         else {
 	              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* , vce(`vce') `statadof'
+			  twowayreg reg `newvars'* , vce(`vce') `statadof'
 		  }
 				
 	}
@@ -863,7 +863,7 @@ if ("`noproj'"==""){
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 			projvar `depvar' `indepvars' , replace
-		twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
+		twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
 			
 	}
 	}
@@ -878,13 +878,13 @@ if ("`noproj'"==""){
 					}
 			else {
 					  projvar `depvar' `indepvars' using "`using'", p(`newvars')
-				  twowayreg `newvars'* , vce(`vce') `statadof'
+				  twowayreg reg `newvars'* , vce(`vce') `statadof'
 				  }
 					
 		}
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 			 projvar `depvar' `indepvars' using "`using'", replace
-			twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
+			twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
 			
 	}
 		
@@ -905,7 +905,7 @@ if ("`noproj'"==""){
 				}
         else {
 	              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg `newvars'* , vce(`vce') `statadof'
+			  twowayreg reg `newvars'* , vce(`vce') `statadof'
 			  }
 				
 	}
@@ -913,7 +913,7 @@ if ("`noproj'"==""){
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 			projvar `depvar' `indepvars', replace
-		twowayreg `depvar' `indepvars' if `touse_wrap' , vce(`vce') `statadof'
+		twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
 		
 	}
 	}
@@ -928,7 +928,7 @@ if ("`noproj'"==""){
 					}
 			else {
 				  projvar `depvar' `indepvars' using "`using'", p(`newvars')
-				  twowayreg `newvars'* , vce(`vce') `statadof'
+				  twowayreg reg `newvars'* , vce(`vce') `statadof'
 				  }
 					
 		}
@@ -936,7 +936,7 @@ if ("`noproj'"==""){
 			
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 			projvar `depvar' `indepvars' using "`using'", replace
-			twowayreg `depvar' `indepvars' if `touse_wrap', vce(`vce') `statadof'
+			twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
 			
 	}
 		
@@ -948,7 +948,7 @@ else if ("`noproj'"=="noproj"){
 	gettoken twoway_id aux: absorb
 	gettoken twoway_t w: aux
 
-	twowayreg `depvar' `indepvars', vce(`vce') `statadof'
+	twowayreg reg `depvar' `indepvars', vce(`vce') `statadof'
 }
 
 
