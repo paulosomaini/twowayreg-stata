@@ -793,26 +793,13 @@ program define twowayreg, eclass sortpreserve
 
  
 }
- 
-	matrix b=e(b)
-	scalar N=e(N)
-	scalar R2= e(r2)
-	scalar F= e(F)
-	scalar df_m= e(df_m)
-	scalar rtms= e(rmse)
-	matrix V = vadj*e(V)
+	matrix b1=e(b)
+	matrix V1 = vadj*e(V)
+	eret repost b=b1 V=V1, esample(`touse_reg')
 	
-
-  *table of regression with standar errors with dof correction
-  eret post b V, esample(`touse_reg')
+  *Add the new arrays and scalars to the table of regression with standar errors with dof correction
   *macros 
   ereturn local absorb "`absorb'"
-  ereturn scalar N= N
-  ereturn scalar R2= R2
-  ereturn scalar F= F
-  ereturn scalar df_m=df_m
-  ereturn scalar df_r1= df_r1
-  ereturn scalar rtms= rtms
   ereturn scalar dimN= dimN
   ereturn scalar dimT= dimT
   ereturn scalar rank_adj=rank_adj
@@ -832,10 +819,6 @@ program define twowayreg, eclass sortpreserve
 	}
   }
   *table display
-  display _newline "Two-Way Regression" _col(45) "Number of obs" _col(60)"=" _col(65) N
-  display _col(45) "F(" df_m "," df_r1 ")"  _col(60)"="  _col(65) F
-  display _col(45) "R-squared" _col(60)"="  _col(65) R2
-  display _col(45) "Root MSE " _col(60)"="  _col(65) rtms
   eret display
 
   
@@ -863,7 +846,7 @@ if ("`noproj'"==""){
 	capt assert inlist( "`using'", "")
 	if !_rc { 
 	*make the whole regression without creating new fixed effects
-	twowayset `absorb' if `touse_wrap', nogen
+	twowayset `absorb' if `touse_wrap'
 	gettoken twoway_id twoway_t : absorb
 	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
@@ -871,22 +854,22 @@ if ("`noproj'"==""){
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars', p(`newvars')
+	              projvar `depvar' `indepvars', p(`newvars')
 			  twowayreg `newvars'* , vce(`vce') `statadof'
-			  }
+		  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars' , replace
+			projvar `depvar' `indepvars' , replace
 		twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
-		
+			
 	}
 	}
 	else{
 		*make the whole regression without creating new fixed effects
-		twowayset `absorb' if `touse_wrap' using "`using'", nogen
+		twowayset `absorb' if `touse_wrap' using "`using'"
 		gettoken twoway_id twoway_t : absorb
 		if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 			capture confirm variable `newvars'
@@ -894,13 +877,13 @@ if ("`noproj'"==""){
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-				  projvar `depvar' `indepvars' using "`using'", p(`newvars')
+					  projvar `depvar' `indepvars' using "`using'", p(`newvars')
 				  twowayreg `newvars'* , vce(`vce') `statadof'
 				  }
 					
 		}
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-			projvar `depvar' `indepvars' using "`using'", replace
+			 projvar `depvar' `indepvars' using "`using'", replace
 			twowayreg `depvar' `indepvars' , vce(`vce') `statadof'
 			
 	}
@@ -921,7 +904,7 @@ if ("`noproj'"==""){
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-              projvar `depvar' `indepvars', p(`newvars')
+	              projvar `depvar' `indepvars', p(`newvars')
 			  twowayreg `newvars'* , vce(`vce') `statadof'
 			  }
 				
@@ -929,7 +912,7 @@ if ("`noproj'"==""){
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `depvar' `indepvars', replace
+			projvar `depvar' `indepvars', replace
 		twowayreg `depvar' `indepvars' if `touse_wrap' , vce(`vce') `statadof'
 		
 	}
