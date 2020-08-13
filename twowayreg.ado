@@ -819,7 +819,7 @@ program define twowayreg, eclass sortpreserve
 	}
   }
   *table display
-  eret display
+  `regtype'
 
   
 
