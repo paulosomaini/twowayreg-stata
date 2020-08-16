@@ -117,6 +117,7 @@ else {
 D = st_data(.,(newid,newt,w),sampleVarName)
 }
 
+
 DH1=sparse(D)
 DD=quadrowsum(DH1)
 HH=quadcolsum(DH1)'
@@ -458,21 +459,20 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 		if ("`replace'" != "") {
 		local newvar="`currvar'"
 			mata projVar()
+		qui{
+			replace `newvar'=. if `touse_proj'==0
+		}
 		}
 		else {
-				capture confirm variable `prefix'`currvar'
-		if !_rc { 
-			}
-			else{
 				qui gen `newvar'=.
 				mata projVar()
-			}
+			
 		}
 
 	
 	}
 
-drop `linear_index'
+
 		
 
 
@@ -830,17 +830,30 @@ end
 
 program define twowayregwrap, eclass sortpreserve
 version 11
-syntax varlist(numeric ts fv) [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
-gettoken depvar indepvars : varlist
+syntax anything [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
+
+gettoken regtype aux: anything
+gettoken estimator aux1: aux
+gettoken varlist1 aux2: aux1, parse("(")
+gettoken varlist_iv:aux2, match(parns) 
+gettoken varlist_intd equal_varlist_ints: varlist_iv, parse("= ")
+gettoken equal varlist_insts: equal_varlist_ints, parse("= ")
+if("`estimator'"=="2sls" | "`estimator'"=="gmm"){
+	local varlist2 `varlist1'
+}
+else{
+	local varlist2 `estimator' `varlist1'
+}
 
 
 	qui{
 	*tempvar to use if and in and delete missings observation of analysis
 	tempvar touse_wrap
 	mark `touse_wrap' `if' `in'
-	markout `touse_wrap' `varlist'
+	markout `touse_wrap' `varlist2' `varlist_intd' `varlist_insts'
 	}
-if ("`noproj'"==""){
+
+	if ("`noproj'"==""){
     capt assert inlist( "`generate'", "")
 	if !_rc { 
 	capt assert inlist( "`using'", "")
@@ -854,16 +867,33 @@ if ("`noproj'"==""){
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-	              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg reg `newvars'* , vce(`vce') `statadof'
+	          projvar `varlist2' `varlist_intd' `varlist_insts', p(`newvars')
+			  if ("`regtype'"=="regress" |"`regtype'"=="reg"){
+			  twowayreg `regtype' `newvars'* , vce(`vce') `statadof'	
+			  }
+			  else if ("`regtype'"=="ivregress"){
+			  local var `varlist2'
+			  local var: subinstr local var " " " `newvars'", all
+			  local var `newvars'`var'
+
+			  local var_ind `varlist_intd'
+			  local var_ind: subinstr local var_ind " " " `newvars'", all
+			  local var_ind `newvars'`var_ind'
+			  
+			  local var_ins `varlist_insts'
+			  local var_ins: subinstr local var_ins " " " `newvars'", all
+			  local var_ins `newvars'`var_ins'
+			  
+			  twowayreg `regtype' `estimator' `var' (`var_ind'= `var_ins') , vce(`vce') `statadof'	
+			  }
 		  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-			projvar `depvar' `indepvars' , replace
-		twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
+		projvar `varlist2' `varlist_intd' `varlist_insts', replace
+		twowayreg `anything' , vce(`vce') `statadof'
 			
 	}
 	}
@@ -877,14 +907,31 @@ if ("`noproj'"==""){
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-					  projvar `depvar' `indepvars' using "`using'", p(`newvars')
-				  twowayreg reg `newvars'* , vce(`vce') `statadof'
+				  projvar `varlist2' `varlist_intd' `varlist_insts' using "`using'", p(`newvars')
+				  if ("`regtype'"=="regress" |"`regtype'"=="reg"){
+						twowayreg `regtype' `newvars'* , vce(`vce') `statadof'	
+						}
+				  else if ("`regtype'"=="ivregress"){
+					  local var `varlist2'
+					  local var: subinstr local var " " " `newvars'", all
+					  local var `newvars'`var'
+
+					  local var_ind `varlist_intd'
+					  local var_ind: subinstr local var_ind " " " `newvars'", all
+					  local var_ind `newvars'`var_ind'
+					  
+					  local var_ins `varlist_insts'
+					  local var_ins: subinstr local var_ins " " " `newvars'", all
+					  local var_ins `newvars'`var_ins'
+					  
+					  twowayreg `regtype' `estimator' `var' (`var_ind'= `var_ins') , vce(`vce') `statadof'	
+					  }
 				  }
 					
 		}
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-			 projvar `depvar' `indepvars' using "`using'", replace
-			twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
+		     projvar `varlist2' `varlist_intd' `varlist_insts' using "`using'", replace
+			 twowayreg `anything' , vce(`vce') `statadof'
 			
 	}
 		
@@ -904,16 +951,33 @@ if ("`noproj'"==""){
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-	              projvar `depvar' `indepvars', p(`newvars')
-			  twowayreg reg `newvars'* , vce(`vce') `statadof'
+	          projvar `varlist2' `varlist_intd' `varlist_insts', p(`newvars')
+			  if ("`regtype'"=="regress" |"`regtype'"=="reg"){
+			  twowayreg `regtype' `newvars'* , vce(`vce') `statadof'	
+			  }
+			  else if ("`regtype'"=="ivregress"){
+			  local var `varlist2'
+			  local var: subinstr local var " " " `newvars'", all
+			  local var `newvars'`var'
+
+			  local var_ind `varlist_intd'
+			  local var_ind: subinstr local var_ind " " " `newvars'", all
+			  local var_ind `newvars'`var_ind'
+			  
+			  local var_ins `varlist_insts'
+			  local var_ins: subinstr local var_ins " " " `newvars'", all
+			  local var_ins `newvars'`var_ins'
+			  
+			  twowayreg `regtype' `estimator' `var' (`var_ind'= `var_ins') , vce(`vce') `statadof'	
+			  }
 			  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-			projvar `depvar' `indepvars', replace
-		twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
+		projvar `varlist2' `varlist_intd' `varlist_insts', replace
+		twowayreg `anything' , vce(`vce') `statadof'
 		
 	}
 	}
@@ -927,16 +991,33 @@ if ("`noproj'"==""){
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-				  projvar `depvar' `indepvars' using "`using'", p(`newvars')
-				  twowayreg reg `newvars'* , vce(`vce') `statadof'
-				  }
+				  projvar `varlist2' `varlist_intd' `varlist_insts' using "`using'", p(`newvars')
+				  if ("`regtype'"=="regress" |"`regtype'"=="reg"){
+						twowayreg `regtype' `newvars'* , vce(`vce') `statadof'	
+						}
+				  else if ("`regtype'"=="ivregress"){
+					  local var `varlist2'
+					  local var: subinstr local var " " " `newvars'", all
+					  local var `newvars'`var'
+
+					  local var_ind `varlist_intd'
+					  local var_ind: subinstr local var_ind " " " `newvars'", all
+					  local var_ind `newvars'`var_ind'
+					  
+					  local var_ins `varlist_insts'
+					  local var_ins: subinstr local var_ins " " " `newvars'", all
+					  local var_ins `newvars'`var_ins'
+					  
+					  twowayreg `regtype' `estimator' `var' (`var_ind'= `var_ins') , vce(`vce') `statadof'	
+					  }
+				}
 					
 		}
 			
 			
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-			projvar `depvar' `indepvars' using "`using'", replace
-			twowayreg reg `depvar' `indepvars' , vce(`vce') `statadof'
+		     projvar `varlist2' `varlist_intd' `varlist_insts' using "`using'", replace
+			 twowayreg `anything' , vce(`vce') `statadof'
 			
 	}
 		
@@ -948,7 +1029,7 @@ else if ("`noproj'"=="noproj"){
 	gettoken twoway_id aux: absorb
 	gettoken twoway_t w: aux
 
-	twowayreg reg `depvar' `indepvars', vce(`vce') `statadof'
+	twowayreg `anything', vce(`vce') `statadof'
 }
 
 
