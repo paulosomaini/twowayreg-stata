@@ -71,6 +71,9 @@ save Example2.dta,replace
 clear all
 do twowayreg.ado
 use Example2.dta
+twowayregwrap reg y x*,absorb(hid tid) newv(w_) 
+twowayregwrap reg w_y w_x*, noproj newv(w_) vce(cluster hid)
+
 *** 2) Run Our procedure
 twowayset hid tid
 projvar y x1, p(w_)
@@ -79,6 +82,4 @@ projvar x2, p(w_)
 twowayreg reg w_y w_x*,vce(robust)
 drop w_*
 
-twowayregwrap y x*,absorb(hid tid) newv(w_) 
-twowayregwrap w_y w_x*, noproj newv(w_) vce(cluster hid)
 
