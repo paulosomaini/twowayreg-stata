@@ -821,78 +821,49 @@ version 11
 syntax anything [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
 local anything `anything'
 
-local vars2projvar 
+local anything= subinstr("`anything'","=", " = ",.) 
+local anything= subinstr("`anything'","-", " - ",.)
+local anything= subinstr("`anything'","(", " ( ",.)
+local anything= subinstr("`anything'",")", " ) ",.)
+
 local anythingout 
-local first
-local last
-
-qui ds 
-local varlist `r(varlist)'
+local isvarlist
+local projvarlist
 foreach x of local anything {
+	local  isvarlist = 0
 
-	*take the words that start with "(" or = 
-	if (substr("`x'",1,1)== "(" | substr("`x'",1,1)=="=") {
-		local first= substr("`x'",1,1)
-		*remove ( or =
-		local x= substr("`x'", 2, .)
-	} 	
+	capture {
+	    confirm variable `x'
+	}
+	if !_rc{
+			local isvarlist = 1
+		}
+
+	if strpos("`x'" ,"*") | strpos("`x'","?"){
+		local isvarlist = 1 
+	} 
 	
-	*take the words that end with ")" or = 
-	if(substr("`x'",-1,.)== ")" | substr("`x'",-1,.)=="="){
-		local last= substr("`x'",-1,.)
-		*remove ) or =
-		local x=substr("`x'",1,length("`x'")-1)
+	if ("`x'"=="-"){
+		local isvarlist=1
+	}
+	
+	if "`isvarlist'"=="0" {
+	    disp "`x'"
+	   	local anythingout= "`anythingout' `x'"
+	} 
+	else {
+	    if("`x'"=="-"){
+		    local projvarlist= "`projvarlist' `x'"
+			local anythingout= "`anythingout' `x'"
+			}
+		else{
+			local projvarlist= "`projvarlist' `x'"
+			local anythingout= "`anythingout' `newvars'`x'"
+			}
+		}
 	}
 
-	*take the words that are bounded by =
-	if strpos("`x'" ,"=") {
-		local equal "="
-		*separate the words
-		local x= subinstr("`x'","="," ",.)
-		gettoken var1 var2:x
-		local var2 `var2'
-		local var2: subinstr local var2 " " "", all
-		local var2 `var2'
-	}
-	
-	if(substr("`x'",-1,.)== "*"){
-		local varlist `varlist' "`x'"
-	}
-	
-	if(substr("`var1'",-1,.)== "*"){
-		local varlist `varlist' "`var1'"
-	}
-
-	if(substr("`var2'",-1,.)== "*"){
-		local varlist `varlist' "`var2'"
-	}
-	
-	*without_parns is anything list without parns
-	local without_parns = "`without_parns' `x'"	
-	
-	*take only the variables in without_parns
-	local vars2projvar : list without_parns & varlist 
-	
-	*adjustment
-	if ("`vars2projvar'"!="" & "`x'"!="" & "`equal'"==""){
-		local anythingout= "`anythingout' `first'`newvars'`x'`last'"
-	}
-	else if ("`vars2projvar'"!="" & "`x'"=="" ){
-		local anythingout= "`anythingout' `first' `last'"
-	}	
-	else if("`vars2projvar'"!="" & "`equal'"!=""){
-		local anythingout= "`anythingout' `first'`newvars'`var1' `equal' `newvars'`var2'`last'" 
-	}
-	*rewrite first, last and equal to use them again
-	local first 
-	local last
-	local equal 
-
-
-}
-local no_vars: list without_parns - vars2projvar
-disp "`no_vars'"
-disp "`vars2projvar'"
+disp "`projvarlist'"
 disp "`anythingout'"
 
 	qui{
@@ -916,15 +887,15 @@ disp "`anythingout'"
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-			projvar `vars2projvar', p(`newvars')
-			twowayreg `no_vars' `anythingout', vce(`vce') `statadof'
+			projvar `projvarlist', p(`newvars')
+			twowayreg `anythingout', vce(`vce') `statadof'
 		  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `vars2projvar', replace
+		projvar `projvarlist', replace
 		twowayreg `anything' , vce(`vce') `statadof'
 			
 	}
@@ -939,13 +910,13 @@ disp "`anythingout'"
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-				  	projvar `vars2projvar' using "`using'", p(`newvars')
-					twowayreg `no_vars' `anythingout', vce(`vce') `statadof'
+				  	projvar `projvarlist' using "`using'", p(`newvars')
+					twowayreg `anythingout', vce(`vce') `statadof'
 				  }
 					
 		}
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		     projvar `vars2projvar' using "`using'", replace
+		     projvar `projvarlist' using "`using'", replace
 			 twowayreg `anything' , vce(`vce') `statadof'
 			
 	}
@@ -966,15 +937,15 @@ disp "`anythingout'"
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-			projvar `vars2projvar', p(`newvars')
-			twowayreg `no_vars' `anythingout', vce(`vce') `statadof'
+			projvar `projvarlist', p(`newvars')
+			twowayreg `anythingout', vce(`vce') `statadof'
 			  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `vars2projvar', replace
+		projvar `projvarlist', replace
 		twowayreg `anything' , vce(`vce') `statadof'
 		
 	}
@@ -989,15 +960,15 @@ disp "`anythingout'"
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-					projvar `vars2projvar' using "`using'", p(`newvars')
-					twowayreg `no_vars' `anythingout', vce(`vce') `statadof'
+					projvar `projvarlist' using "`using'", p(`newvars')
+					twowayreg `anythingout', vce(`vce') `statadof'
 				}
 					
 		}
 			
 			
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		     projvar `vars2projvar' using "`using'", replace
+		     projvar `projvarlist' using "`using'", replace
 			 twowayreg `anything' , vce(`vce') `statadof'
 			
 	}
