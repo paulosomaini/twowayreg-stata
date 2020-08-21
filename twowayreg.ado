@@ -848,7 +848,6 @@ foreach x of local anything {
 	}
 	
 	if "`isvarlist'"=="0" {
-	    disp "`x'"
 	   	local anythingout= "`anythingout' `x'"
 	} 
 	else {
@@ -862,15 +861,13 @@ foreach x of local anything {
 			}
 		}
 	}
-
-disp "`projvarlist'"
-disp "`anythingout'"
+local projvarlist : list uniq projvarlist
 
 	qui{
 	*tempvar to use if and in and delete missings observation of analysis
 	tempvar touse_wrap
 	mark `touse_wrap' `if' `in'
-	markout `touse_wrap' `vars2projvar'
+	markout `touse_wrap' `projvarlist'
 	}
 
 	if ("`noproj'"==""){
