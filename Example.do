@@ -73,7 +73,7 @@ do twowayreg.ado
 use Example2.dta
 twowayregwrap reg y x1-x3,absorb(hid tid) newv(w_) 
 twowayregwrap reg w_y w_x*, noproj newv(w_) vce(cluster hid)
-reg y x1 - x
+
 *** 2) Run Our procedure
 twowayset hid tid
 projvar y x1, p(w_)

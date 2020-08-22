@@ -752,14 +752,20 @@ program define twowayreg, eclass sortpreserve
 			matrix B=e(B)
 		}	
 	}
-	*take regtype to make sure that the command only work under certains types of regressions
+	*take regtype to make sure that the command work under certains types of regressions
 	gettoken regtype varlist: anything
-    qui{    
-	`anything' if `touse_reg', nocons vce(`vce')
-	*regress `depvar' `indepvars'  , noc vce(`vce')
+    
+	if ("`regtype'"=="sureg"){
+	`anything' if `touse_reg', dfk2
 	}
+	else{
+	qui{    
+	`anything' if `touse_reg', nocons vce(`vce')
+	}
+	}
+
 	
-	
+if ("`e(k_eq)'"==""){
     if ("`statadof'"== ""){
 	*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
    qui{
@@ -784,6 +790,7 @@ program define twowayreg, eclass sortpreserve
 	matrix b1=e(b)
 	matrix V1 = vadj*e(V)
 	eret repost b=b1 V=V1, esample(`touse_reg')
+}
 	
   *Add the new arrays and scalars to the table of regression with standar errors with dof correction
   *macros 
@@ -806,12 +813,13 @@ program define twowayreg, eclass sortpreserve
 		ereturn matrix B= B
 	}
   }
-  *table display
+if ("`regtype'"!="sureg"){ 
+ *table display
   `regtype'
+}	
+	
 
-  
-
-  
+   
 end 
  
 
