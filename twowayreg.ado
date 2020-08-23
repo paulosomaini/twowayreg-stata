@@ -758,6 +758,7 @@ program define twowayreg, eclass sortpreserve
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
+	local anything= subinstr("`anything'",")", " ,nocons) ",.)	
 	qui{
 		`anything' if `touse_reg', dfk2
 	}	
@@ -821,14 +822,13 @@ foreach x of local anything{
 		 
 		}
 			matrix b1=e(b)
-			local num_1=`num'-1
-			if ("`num_1'"=="0"){
-				local param= e(df_m`num')+1
+			if ("`num'"=="1"){
+				local param= e(df_m`num')
 				local paramaux 1
 			}
 			else{
 				local paramaux= `param'+1
-				local param= `param'+e(df_m`num')+1	
+				local param= `param'+e(df_m`num')
 			}
 			mat V0=e(V)
 			forvalues i =`paramaux'/`param'{
