@@ -83,3 +83,9 @@ twowayreg reg w_y w_x*,vce(robust)
 drop w_*
 
 
+***TEST
+clear all
+do twowayreg.ado
+use Example2.dta
+twowayregwrap sureg (y x1-x3) ,absorb(hid tid) newv(w_) 
+twowayregwrap reg w_y w_x*, noproj newv(w_) 

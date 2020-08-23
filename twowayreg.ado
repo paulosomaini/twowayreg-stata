@@ -721,6 +721,8 @@ program define twowayreg, eclass sortpreserve
 *    _fv_check_depvar `depvar'
 *    fvexpand `indepvars'
 	
+     matrix invDD=e(invDD)
+
 	qui{
 	tempvar touse_reg
 	gen byte `touse_reg'= e(sample)
@@ -756,7 +758,9 @@ program define twowayreg, eclass sortpreserve
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
-	`anything' if `touse_reg', dfk2
+	qui{
+		`anything' if `touse_reg', dfk2
+	}	
 	}
 	else{
 	qui{    
@@ -791,6 +795,52 @@ if ("`e(k_eq)'"==""){
 	matrix V1 = vadj*e(V)
 	eret repost b=b1 V=V1, esample(`touse_reg')
 }
+
+else{
+local num 0
+foreach x of local anything{
+	if strpos("`x'" ,"("){
+		foreach parns in x{
+			local num= `num' + 1
+			if ("`statadof'"== ""){
+			*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
+		   qui{
+			scalar df_r`num'= e(N)-e(df_m`num')-1
+			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj)
+				}
+		 }
+
+		  else if ("`statadof'"== "statadof"){
+			*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
+		   qui{
+			scalar N=e(N)
+			scalar df_m`num'= e(df_m`num')
+			scalar df_r`num'= e(N)-e(df_m`num')-1
+			scalar vadj`num' = (N-1)*(df_r`num'/(df_r`num' - 1))/(N - df_m`num' - 1)
+				}
+		 
+		}
+			matrix b1=e(b)
+			local num_1=`num'-1
+			if ("`num_1'"=="0"){
+				local param= e(df_m`num')+1
+				local paramaux 1
+			}
+			else{
+				local paramaux= `param'+1
+				local param= `param'+e(df_m`num')+1	
+			}
+			mat V0=e(V)
+			forvalues i =`paramaux'/`param'{
+					mat V0[`i',`i']= vadj`num'*e(V)[`i',`i']
+				}
+			}
+		}	
+	}
+	eret repost b=b1 V=V0, esample(`touse_reg')
+	ereturn scalar df_r`num'= df_r`num'
+	
+}
 	
   *Add the new arrays and scalars to the table of regression with standar errors with dof correction
   *macros 
@@ -813,10 +863,9 @@ if ("`e(k_eq)'"==""){
 		ereturn matrix B= B
 	}
   }
-if ("`regtype'"!="sureg"){ 
+
  *table display
   `regtype'
-}	
 	
 
    
