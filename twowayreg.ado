@@ -387,6 +387,22 @@ end
 program define projvar, nclass
 version 11
 syntax varlist [using/], [Prefix(name)] [REPLACE]
+
+
+*qui ds
+*local varlist_data `r(varlist)' 
+*local varlist_aux: list varlist & varlist_data  
+*di "`varlist_aux'"
+foreach currvar of varlist `varlist'{ 
+	if ("`replace'"=="") {
+		capture confirm variable `prefix'`currvar'
+		local rc = !_rc
+		if !_rc {
+				di "{err} There is a variable already created with the same name."
+				exit !_rc
+			}
+		}
+}
 	
 	*in e(absorb) there is the fixed effects that we use to generate the new matrix V
 	local absorb = "`e(absorb)'"
@@ -923,6 +939,7 @@ foreach x of local anything {
 			}
 		}
 	}
+local projvarlist=stritrim("`projvarlist'")	
 local projvarlist= subinstr("`projvarlist'"," - ", "-",.) 	
 local projvarlist : list uniq projvarlist
 
