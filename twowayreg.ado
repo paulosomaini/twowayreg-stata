@@ -458,12 +458,17 @@ syntax varlist [using/], [Prefix(name)] [REPLACE]
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
 		local newvar="`currvar'"
-		
+		mata projVar()
 		}
 		else {
-			 qui gen `newvar'=.
-		}
+			  capture confirm variable `prefix'`currvar'
+			  if !_rc { 
+				}
+			else{
+			qui gen `newvar'=.
 			mata projVar()
+			}
+		}	
 
 	
 	}
@@ -918,6 +923,7 @@ foreach x of local anything {
 			}
 		}
 	}
+local projvarlist= subinstr("`projvarlist'"," - ", "-",.) 	
 local projvarlist : list uniq projvarlist
 
 	qui{
