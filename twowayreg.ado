@@ -398,7 +398,7 @@ foreach currvar of varlist `varlist'{
 		capture confirm variable `prefix'`currvar'
 		local rc = !_rc
 		if !_rc {
-				di "{err} There is a variable already created with the same name."
+				di "{err} The variable `prefix'`currvar' already exists."
 				exit !_rc
 			}
 		}
