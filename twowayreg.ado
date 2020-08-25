@@ -840,6 +840,7 @@ if ("`e(k_eq)'"==""){
 
 else{
 local num 0
+mat dofs= (1)
 foreach x of local anything{
 	if strpos("`x'" ,"("){
 		foreach parns in x{
@@ -865,25 +866,13 @@ foreach x of local anything{
 			matrix b1=e(b)
 			local num_1= `num'-1
 			local param= e(df_m`num')
-
-			if ("`num'"=="1"){
-				mat dofs`num'= sqrt(vadj`num')*J(`param',`param',1)
-				mat dofs= dofs`num'
-			}
-			else if ("`num'">"1"){
-				mat dofs`num'=(sqrt(vadj`num')*J(`param',`param',1))
-				if ("`helping'"=="1"){
-					mat dofs`num_1'=dofs
-				}
-				mata: mata_matrix("dofs`num_1'","dofs`num'")
-				local helping=1			
-			}
+			matrix dofs= (dofs \ J(`param',1,sqrt(vadj`num')))
 			}
 		}	
 	}
-	
+	mat dofs = dofs[2...,1]
 	*create the matrix of variance and covariances with the dof correction
-	mat V0 = diag(vecdiag(dofs))
+	mat V0 = diag(dofs)
     mat V1=V0*e(V)*V0
 	eret repost b=b1 V=V1, esample(`touse_reg')
 	ereturn scalar df_r`num'= df_r`num'
