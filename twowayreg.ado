@@ -775,11 +775,13 @@ program define twowayreg, eclass sortpreserve
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
+	*separate the comma and the parenthesis from the nocons (this only happens if there is a comma and a "nocons")
 	local anything= subinstr("`anything'",")", " ) ",.)
 	local anything= subinstr("`anything'",",", " , ",.)
+	*remove the comma and the nocons
 	local anything= subinstr("`anything'",",", "",.)
 	local anything= subinstr("`anything'","nocons", "",.)
-	
+	*change the ")" for a ",nocons)"
 	local anything= subinstr("`anything'",")", ",nocons)",.)
 	local anything= stritrim("`anything'")
 	qui{
@@ -856,20 +858,23 @@ foreach x of local anything{
 				local paramaux= `param'+1
 				local param= `param'+e(df_m`num')
 			}
+			*create a matrix V that is an identity matrix of dimension paramXparam 
 			mat V`num'=I(`param')
 			if ("`num'">"1"){
 			forvalues i=1/`param_1'{
+				*if is not the first matrix created, change the arguments the diagonal identity matrix from [1,1] to [param_1,param_1] for the previos matrix created 
 				mat V`num'[`i',`i']= V`num_1'[`i',`i']
 			}				
 			}
 			forvalues i =`paramaux'/`param'{
+				*change the 1s for the sqrt(vadj) from the [paramaux, paramaux] argument to [param,param] argument
 					mat V`num'[`i',`i']= sqrt(vadj`num')*V`num'[`i',`i']
 				}
 			mat V0=V`num'	
 			}
 		}	
 	}
-
+	*create the matrix of variance and covariances with the dof correction
     mat V1=V0*e(V)*V0
 	eret repost b=b1 V=V1, esample(`touse_reg')
 	ereturn scalar df_r`num'= df_r`num'
