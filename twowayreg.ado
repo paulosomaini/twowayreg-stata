@@ -730,21 +730,6 @@ end
 capture mata mata drop mata_matrix()
 capture program drop twowayreg 
 
-mata:
-void mata_matrix(
-				  string scalar df1name,
-				  string scalar df2name)
-{ 
-real matrix dof_prev,dof_now,Z
-
-	dof_prev=st_matrix(df1name)
-	dof_now=st_matrix(df2name)
-	Z=blockdiag(dof_prev,dof_now)
-	st_matrix("dofs",Z)
-
-
-}
-end 
 
 program define twowayreg, eclass sortpreserve
     version 11
