@@ -389,10 +389,6 @@ version 11
 syntax varlist [using/], [Prefix(name)] [REPLACE]
 
 
-*qui ds
-*local varlist_data `r(varlist)' 
-*local varlist_aux: list varlist & varlist_data  
-*di "`varlist_aux'"
 foreach currvar of varlist `varlist'{ 
 	if ("`replace'"=="") {
 		capture confirm variable `prefix'`currvar'
@@ -779,7 +775,13 @@ program define twowayreg, eclass sortpreserve
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
-	local anything= subinstr("`anything'",")", " ,nocons) ",.)	
+	local anything= subinstr("`anything'",")", " ) ",.)
+	local anything= subinstr("`anything'",",", " , ",.)
+	local anything= subinstr("`anything'",",", "",.)
+	local anything= subinstr("`anything'","nocons", "",.)
+	
+	local anything= subinstr("`anything'",")", ",nocons)",.)
+	local anything= stritrim("`anything'")
 	qui{
 		`anything' if `touse_reg', dfk2
 	}	
@@ -828,6 +830,7 @@ foreach x of local anything{
 			*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
 		   qui{
 			scalar df_r`num'= e(N)-e(df_m`num')-1
+			disp "`df_r`num''"
 			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj)
 				}
 		 }
@@ -848,17 +851,27 @@ foreach x of local anything{
 				local paramaux 1
 			}
 			else{
+				local num_1= `num' - 1
+				local param_1= `param'
 				local paramaux= `param'+1
 				local param= `param'+e(df_m`num')
 			}
-			mat V0=e(V)
+			mat V`num'=I(`param')
+			if ("`num'">"1"){
+			forvalues i=1/`param_1'{
+				mat V`num'[`i',`i']= V`num_1'[`i',`i']
+			}				
+			}
 			forvalues i =`paramaux'/`param'{
-					mat V0[`i',`i']= vadj`num'*e(V)[`i',`i']
+					mat V`num'[`i',`i']= sqrt(vadj`num')*V`num'[`i',`i']
 				}
+			mat V0=V`num'	
 			}
 		}	
 	}
-	eret repost b=b1 V=V0, esample(`touse_reg')
+
+    mat V1=V0*e(V)*V0
+	eret repost b=b1 V=V1, esample(`touse_reg')
 	ereturn scalar df_r`num'= df_r`num'
 	
 }
@@ -903,6 +916,7 @@ local anything= subinstr("`anything'","=", " = ",.)
 local anything= subinstr("`anything'","-", " - ",.)
 local anything= subinstr("`anything'","(", " ( ",.)
 local anything= subinstr("`anything'",")", " ) ",.)
+local anything= subinstr("`anything'",",", " , ",.)
 
 local anythingout 
 local isvarlist
@@ -925,12 +939,19 @@ foreach x of local anything {
 		local isvarlist=1
 	}
 	
+	if ("`x'"==","){
+		local isvarlist=1
+	}
+	
 	if "`isvarlist'"=="0" {
 	   	local anythingout= "`anythingout' `x'"
 	} 
 	else {
 	    if("`x'"=="-"){
 		    local projvarlist= "`projvarlist' `x'"
+			local anythingout= "`anythingout' `x'"
+			}
+		else if("`x'"==","){
 			local anythingout= "`anythingout' `x'"
 			}
 		else{
