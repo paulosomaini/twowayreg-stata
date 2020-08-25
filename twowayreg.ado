@@ -727,7 +727,24 @@ else {
 
 end
 
+capture mata mata drop mata_matrix()
 capture program drop twowayreg 
+
+mata:
+void mata_matrix(
+				  string scalar df1name,
+				  string scalar df2name)
+{ 
+real matrix dof_prev,dof_now,Z
+
+	dof_prev=st_matrix(df1name)
+	dof_now=st_matrix(df2name)
+	Z=blockdiag(dof_prev,dof_now)
+	st_matrix("dofs",Z)
+
+
+}
+end 
 
 program define twowayreg, eclass sortpreserve
     version 11
@@ -775,12 +792,11 @@ program define twowayreg, eclass sortpreserve
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
-	*separate the comma and the parenthesis from the nocons (this only happens if there is a comma and a "nocons")
-	local anything= subinstr("`anything'",")", " ) ",.)
-	local anything= subinstr("`anything'",",", " , ",.)
 	*remove the comma and the nocons
 	local anything= subinstr("`anything'",",", "",.)
 	local anything= subinstr("`anything'","nocons", "",.)
+	local anything= subinstr("`anything'","noc", "",.)
+	
 	*change the ")" for a ",nocons)"
 	local anything= subinstr("`anything'",")", ",nocons)",.)
 	local anything= stritrim("`anything'")
@@ -832,7 +848,6 @@ foreach x of local anything{
 			*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
 		   qui{
 			scalar df_r`num'= e(N)-e(df_m`num')-1
-			disp "`df_r`num''"
 			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj)
 				}
 		 }
@@ -848,33 +863,27 @@ foreach x of local anything{
 		 
 		}
 			matrix b1=e(b)
+			local num_1= `num'-1
+			local param= e(df_m`num')
+
 			if ("`num'"=="1"){
-				local param= e(df_m`num')
-				local paramaux 1
+				mat dofs`num'= sqrt(vadj`num')*J(`param',`param',1)
+				mat dofs= dofs`num'
 			}
-			else{
-				local num_1= `num' - 1
-				local param_1= `param'
-				local paramaux= `param'+1
-				local param= `param'+e(df_m`num')
-			}
-			*create a matrix V that is an identity matrix of dimension paramXparam 
-			mat V`num'=I(`param')
-			if ("`num'">"1"){
-			forvalues i=1/`param_1'{
-				*if is not the first matrix created, change the arguments the diagonal identity matrix from [1,1] to [param_1,param_1] for the previos matrix created 
-				mat V`num'[`i',`i']= V`num_1'[`i',`i']
-			}				
-			}
-			forvalues i =`paramaux'/`param'{
-				*change the 1s for the sqrt(vadj) from the [paramaux, paramaux] argument to [param,param] argument
-					mat V`num'[`i',`i']= sqrt(vadj`num')*V`num'[`i',`i']
+			else if ("`num'">"1"){
+				mat dofs`num'=(sqrt(vadj`num')*J(`param',`param',1))
+				if ("`helping'"=="1"){
+					mat dofs`num_1'=dofs
 				}
-			mat V0=V`num'	
+				mata: mata_matrix("dofs`num_1'","dofs`num'")
+				local helping=1			
+			}
 			}
 		}	
 	}
+	
 	*create the matrix of variance and covariances with the dof correction
+	mat V0 = diag(vecdiag(dofs))
     mat V1=V0*e(V)*V0
 	eret repost b=b1 V=V1, esample(`touse_reg')
 	ereturn scalar df_r`num'= df_r`num'
