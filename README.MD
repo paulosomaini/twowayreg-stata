@@ -114,7 +114,7 @@ TBD
 
 The variance formula will be:
 ```
-![equation](https://latex.codecogs.com/gif.latex?%5Cinline%20%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D%5Cleft%28%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20w_%7Bj%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5E%7B%5Cprime%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5Cright%29%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D)
+- <img src="https://latex.codecogs.com/gif.latex?%5Cinline%20%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D%5Cleft%28%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20w_%7Bj%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5E%7B%5Cprime%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5Cright%29%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D "/>
 
 where:
 .![equation]https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D , which is typically a conventionally calculated variance matrix
