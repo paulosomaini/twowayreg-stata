@@ -120,9 +120,9 @@ where:
 
 ![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is typically a conventionally calculated variance matrix
 
-![third eq](https://latex.codecogs.com/gif.latex?u_j) , j=1,...,N a row vector of scores; and
+![third eq](https://latex.codecogs.com/gif.latex?u_j) , j=1,...,N a row vector of scores
 
-qc, a constant degree of freedom correction necessary to calculate correctly the variance-covarinace matrix.
+qc, a constant degree of freedom correction necessary to calculate correctly the variance-covarinace matrix
 
 wj are the user-specified weights, equal to 1 if no weights are specified.
 
