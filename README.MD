@@ -114,13 +114,14 @@ TBD
 
 The variance formula will be:
 ```
-https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D%5Cleft%28%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20w_%7Bj%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5E%7B%5Cprime%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5Cright%29%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D
-```
+![equation]https://latex.codecogs.com/png.latex?%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D%5Cleft%28%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20w_%7Bj%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5E%7B%5Cprime%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5Cright%29%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D
+
 where:
-.https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D , which is typically a conventionally calculated variance matrix
-.https://latex.codecogs.com/gif.latex?u_j , j=1,...,N a row vector of scores; and
+.![equation]https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D , which is typically a conventionally calculated variance matrix
+.![equation]https://latex.codecogs.com/gif.latex?u_j , j=1,...,N a row vector of scores; and
 .qc, a constant degree of freedom correction necessary to calculate correctly the variance-covarinace matrix.
 .wj are the user-specified weights, equal to 1 if no weights are specified.
+```
 
 The degree of freedom correction:
 ```
