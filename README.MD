@@ -113,21 +113,28 @@ TBD
 ## Appendix 
 
 The variance formula will be:
+
 ![first eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D%5Cleft%28%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20w_%7Bj%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5E%7B%5Cprime%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5Cright%29%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D)
 
 where:
-![equation]https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D , which is typically a conventionally calculated variance matrix
-![equation]https://latex.codecogs.com/gif.latex?u_j , j=1,...,N a row vector of scores; and
+
+![second eq]https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D , which is typically a conventionally calculated variance matrix
+
+![third eq]https://latex.codecogs.com/gif.latex?u_j , j=1,...,N a row vector of scores; and
+
 qc, a constant degree of freedom correction necessary to calculate correctly the variance-covarinace matrix.
+
 wj are the user-specified weights, equal to 1 if no weights are specified.
 
 The degree of freedom correction:
 
-![eq]https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3D%5Cfrac%7BN-1%7D%7BN-k-d-t%7D%20%5Cfrac%7BM%7D%7BM-1%7D
+![fourth eq]https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3D%5Cfrac%7BN-1%7D%7BN-k-d-t%7D%20%5Cfrac%7BM%7D%7BM-1%7D
 
 Where k is the number of controls without dummies, t is the number of time fixed effects without the redundants, d is the number of group fixed effects without the redundants, N is the number of observations(each observation is equal to 1 if no weights are specified), and M is the number of cluster if vce(cluster clustvar) is specified.   
 
-If vce(cluster clusvar) is not specified then N=M and https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3DN%20/%28N-k-d-t%29
+If vce(cluster clusvar) is not specified then N=M and 
+![fith eq]https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3DN%20/%28N-k-d-t%29
+
 ## References
 
 Arellano, M. (1987), Computing Robust Standard Errors for Within-Groups Estimators, Oxford Bulletin of Economics and
