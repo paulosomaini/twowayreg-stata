@@ -21,10 +21,11 @@ There are two ways you can interface with the algorithm.
 The most basic way is using the command `twowaywrapper` to run ordinary least squares. 
 This command runs the whole algorithm. The syntaxis is as follows:
 ```
-.varlist(numeric ts fv) [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
+.command varlist(numeric ts fv) [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
 ```
 
-The varlist contains the dependent followed by the independent variables.
+Command contains the type of regression. For example you could choose to run: reg, ivreg, sureg, etc. 
+The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original command. 
 Adding `using` followed by a path will save a set of matrices in that path. Otherwise, the matrices will be saved in `eresults`. STATA may fail if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
 The two levels of fixed effects are specified in the `absorb` option. The absorb option takes at least two variables with group identifiers. The optional third input can be a variable of analytic weights. 
 If the group identifiers are not consecutive after dropping redundants and missing observations, then you have the option `generate()` to create new group identifiers.
@@ -39,7 +40,7 @@ With NOPROJ you can run the regression without creating any arrays or projecting
 
 The vce() option allows you to choose how to compute standard errors:
 ```
-.robust: standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
+.vce(robust): standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
 .vce(cluster hhid):standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation. 
 .vce(cluster hhid) statadof:Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe
 .If vce() is omitted: standard errors assuming homoscedasticity and no within  group correlation or serial correlation.
@@ -47,10 +48,11 @@ The vce() option allows you to choose how to compute standard errors:
 
 Examples:
 ```
-.twowayregwrap y x*, absorb(hhid tid w) newv(w_) robust
-.twowayregwrap w_y w_x1, noproj vce(cluster hhid)
+.twowayregwrap reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)
+.twowayregwrap reg w_y w_x1, noproj vce(cluster hhid)
+.twowayreg ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)
 ```
-The first line creates new variables that are the residualized variables. The second line uses the variables already projected to save time.
+The first line creates new variables that are the residualized variables. The second line uses the variables already projected to save time. The third line uses the variables already projected with a different command. 
 
 ### Advanced
 
@@ -73,7 +75,7 @@ Examples:
 
 ```
 The first two lines assign each observation a weight of one (default. The second pair of lines assign to each observation the weight given by variable w. The last two lines save the arrays in "folder" with the prefix "x"
-The user can use if and in in this command. This is extremely important if there is a variable that has missing values.
+You can use if and in in this command. This is extremely important if there is a variable that has missing values.
 
 `projvar` performs the second step of the algorithm. It is followed by a list of variables. These variables are projected onto the set of dummies, and the residual of this projection is saved as additional variables with a new prefix. Alternatively, you may choose to replace the existing variables. For example:
 
@@ -85,9 +87,9 @@ The user can use if and in in this command. This is extremely important if there
 If you used `using` to save the matrices in `twowayset`, use the same path to recover them and use them in `projvar`. Otherwise, `projvar` will use the matrices stored in ereturn.
 If a missing value exist in one of the variables projected there will be an error indacating that the variable cannot be residualized.
 
-twowayreg performs the last step of the algorithm, making the regression of the projected variables. Here you can calculate the standard errors as in twowaywrapper. For example:
+twowayreg performs the last step of the algorithm, making the regression of the projected variables. Here you can select the type or regression and calculate the standard errors as in twowaywrapper. For example:
 ```
-.twowayreg w_y w_x*, vce(cluster hhid)
+.twowayreg reg w_y w_x*, vce(cluster hhid)
 
 ```
 
@@ -114,26 +116,20 @@ TBD
 
 The variance formula will be:
 
-![first eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D%5Cleft%28%5Csum_%7Bj%3D1%7D%5E%7BN%7D%20w_%7Bj%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5E%7B%5Cprime%7D%20%5Cmathbf%7Bu%7D_%7Bj%7D%5Cright%29%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D)
+  ![first eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathcal%7BV%7D%7D%3Dq_%7Bc%7D%20%5Cwidehat%7B%5Cmathbf%7BV%7D%7D)
 
 where:
 
-![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is typically a conventionally calculated variance matrix
+![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is variance-covariance matrix calculated by the command choosen in twowayreg or twowayregwrap.
 
-![third eq](https://latex.codecogs.com/gif.latex?u_j) , `j=1,...,N` a row vector of scores
-
-`qc`, a constant degree of freedom correction necessary to calculate correctly the variance-covarinace matrix
-
-`wj` are the user-specified weights, equal to 1 if no weights are specified.
+`qc`, a degree of freedom correction necessary to calculate correctly the variance-covarinace matrix.
 
 The degree of freedom correction:
 
-![fourth eq](https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3D%5Cfrac%7BN-1%7D%7BN-k-d-t%7D%20%5Cfrac%7BM%7D%7BM-1%7D)
+   ![third eq](https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3DN-k/%28N-k-d-t%29)
 
-Where k is the number of controls without dummies, t is the number of time fixed effects without the redundants, d is the number of group fixed effects without the redundants, N is the number of observations(each observation is equal to 1 if no weights are specified), and M is the number of cluster if `vce(cluster clustvar)` is specified.   
+Where k is the number of controls without dummies, t is the number of time fixed effects without the redundants, d is the number of group fixed effects without the redundants, N is the number of observations(each observation is equal to 1 if no weights are specified).
 
-If `vce(cluster clusvar)` is not specified then N=M and 
-![fith eq](https://latex.codecogs.com/gif.latex?q_%7B%5Cmathrm%7Bc%7D%7D%3DN%20/%28N-k-d-t%29)
 
 ## References
 
