@@ -777,6 +777,11 @@ program define twowayreg, eclass sortpreserve
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
+		capt assert inlist( "`vce'", "")
+	if _rc { 
+			di "{err} no vce option allowed"
+			exit !_rc
+	}
 	*remove the comma and the nocons
 	local anything= subinstr("`anything'",",", "",.)
 	local anything= subinstr("`anything'","nocons", "",.)
@@ -789,9 +794,14 @@ program define twowayreg, eclass sortpreserve
 		`anything' if `touse_reg', dfk2
 	}	
 	}
+	else if("`regtype'"=="ivregress"){
+	qui{
+		`anything' if `touse_reg', small nocons vce(`vce')				
+	}
+	}
 	else{
 	qui{    
-	`anything' if `touse_reg', nocons vce(`vce')
+		`anything' if `touse_reg', nocons vce(`vce')
 	}
 	}
 
