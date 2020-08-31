@@ -93,6 +93,15 @@ twowayreg performs the last step of the algorithm, making the regression of the 
 
 ```
 
+If you already run `twowayset` you can save the matrixes in a folder to not re-calculate them. 
+The comand `towaysave` will complete this task and the command `twowayload` load the matrixes saved previously. Both of them can be followed by `using` to select the path where the matrixes will be saved. If using option is ommited the arrays will we stored in the current directory.
+```
+.twowaysave using "../folder/x"
+....
+.twowayload using "../folder/x"
+```
+In this example the matrixes will be saved in "folder" with the prefix "x", then the you can close STATA and them use `twowayload` to load the arrays.
+
 ## Whats in this repo?
 
 * twowayreg.ado
