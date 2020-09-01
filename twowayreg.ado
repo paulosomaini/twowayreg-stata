@@ -736,11 +736,6 @@ program define twowayreg, eclass sortpreserve
  
     syntax anything,  [,VCE(namelist) statadof] 
 	local absorb = "`e(absorb)'"
-*    gettoken depvar indepvars : varlist
-*    _fv_check_depvar `depvar'
-*    fvexpand `indepvars'
-	
-     matrix invDD=e(invDD)
 
 	qui{
 	tempvar touse_reg
@@ -805,6 +800,21 @@ program define twowayreg, eclass sortpreserve
 	}
 	}
 
+scalar nested_adj=0
+gettoken cluster clustvar:vce
+if ("`clustvar'"!=""){
+	gettoken var1 var2: absorb
+	cap assertnested `var1' `clustvar'
+	if !_rc {
+			scalar nested_adj=dimN
+	}
+	cap assertnested `var2' `clustvar'
+	if !_rc {
+			scalar nested_adj=dimT
+	}
+
+
+}	
 	
 if ("`e(k_eq)'"==""){
     if ("`statadof'"== ""){
@@ -812,7 +822,7 @@ if ("`e(k_eq)'"==""){
    qui{
 	scalar df_r= e(N)-e(df_m)-1
 	scalar df_r1= e(df_r)
-	scalar vadj = df_r/(df_r- dimN - dimT+rank_adj)
+	scalar vadj = df_r/(df_r- dimN - dimT+rank_adj+nested_adj)
 	    }
  }
 
@@ -831,6 +841,7 @@ if ("`e(k_eq)'"==""){
 	matrix b1=e(b)
 	matrix V1 = vadj*e(V)
 	eret repost b=b1 V=V1, esample(`touse_reg')
+	ereturn scalar dof_adj=vadj
 }
 
 else{
@@ -844,7 +855,7 @@ foreach x of local anything{
 			*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
 		   qui{
 			scalar df_r`num'= e(N)-e(df_m`num')-1
-			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj)
+			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj+nested_adj)
 				}
 		 }
 
@@ -871,7 +882,7 @@ foreach x of local anything{
     mat V1=V0*e(V)*V0
 	eret repost b=b1 V=V1, esample(`touse_reg')
 	ereturn scalar df_r`num'= df_r`num'
-	
+	ereturn scalar dof_ad`num' =vadj`num'
 }
 	
   *Add the new arrays and scalars to the table of regression with standar errors with dof correction
@@ -879,6 +890,7 @@ foreach x of local anything{
   ereturn local absorb "`absorb'"
   ereturn scalar dimN= dimN
   ereturn scalar dimT= dimT
+  ereturn scalar nested_adj=nested_adj
   ereturn scalar rank_adj=rank_adj
 	capt confirm matrix invDD
 	if !_rc { 
