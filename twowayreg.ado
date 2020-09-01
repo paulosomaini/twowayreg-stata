@@ -804,11 +804,11 @@ scalar nested_adj=0
 gettoken cluster clustvar:vce
 if ("`clustvar'"!=""){
 	gettoken var1 var2: absorb
-	cap assertnested `var1' `clustvar'
+	cap assertnested `clustvar' `var1' 
 	if !_rc {
 			scalar nested_adj=dimN
 	}
-	cap assertnested `var2' `clustvar'
+	cap assertnested `clustvar' `var2'
 	if !_rc {
 			scalar nested_adj=dimT
 	}
