@@ -100,9 +100,9 @@ The comand `towaysave` will complete this task and the command `twowayload` load
 ....
 .twowayload using "../folder/x"
 ```
-In this example the matrixes will be saved in "folder" with the prefix "x", then the you can close STATA and them use `twowayload` to load the arrays.
+In this example the matrixes will be saved in "folder" with the prefix "x", then you can close STATA and use `twowayload` to load the arrays.
 
-## Whats in this repo?
+## What's in this repo?
 
 * twowayreg.ado
 * example.do
