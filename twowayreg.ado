@@ -810,7 +810,7 @@ if ("`clustvar'"!=""){
 	}
 	cap assertnested `clustvar' `var2'
 	if !_rc {
-			scalar nested_adj=dimT
+			scalar nested_adj=dimT+ `nested_adj'
 	}
 
 
