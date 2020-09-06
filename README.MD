@@ -139,10 +139,13 @@ The degree of freedom correction:
 
 Where k is the number of controls without dummies, t is the number of time fixed effects without the redundants, d is the number of group fixed effects without the redundants, N is the number of observations(each observation is equal to 1 if no weights are specified).
 
+Based on [this paper](http://cameron.econ.ucdavis.edu/research/Cameron_Miller_JHR_2015_February.pdf) by A. Colin Cameron, and Douglas L. Miller if a fixed effect variable is also a cluster variable (or is nested within a cluster variable), we do not consider it when computing the absorbed degrees of freedom (the degree of freedom correction will be smaller). This is done to replicate the within estimation which leads to the correct degree of freedom correction. 
 
 ## References
 
 Arellano, M. (1987), Computing Robust Standard Errors for Within-Groups Estimators, Oxford Bulletin of Economics and
 Statistics, 49, issue 4, p. 431–434. 
+
+Cameron, A. C., & Miller, D. L. (2015). A practitioner’s guide to cluster-robust inference. Journal of human resources, 50(2), 317-372.
 
 Somaini, P. and F.A. Wolak, (2016), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
