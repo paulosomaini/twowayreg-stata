@@ -18,7 +18,7 @@ There are two ways you can interface with the algorithm.
 
 ### Basic
 
-The most basic way is using the command `twowaywrapper` to run ordinary least squares. 
+The most basic way is using the command `twfe` to run ordinary least squares. 
 This command runs the whole algorithm. The syntaxis is as follows:
 ```
 .command varlist(numeric ts fv) [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
@@ -48,9 +48,9 @@ The vce() option allows you to choose how to compute standard errors:
 
 Examples:
 ```
-.twowayregwrap reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)
-.twowayregwrap reg w_y w_x1, noproj vce(cluster hhid)
-.twowayreg ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)
+.twfe reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)
+.twfe reg w_y w_x1, noproj vce(cluster hhid)
+.twfe ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)
 ```
 The first line creates new variables that are the residualized variables. The second line uses the variables already projected to save time. The third line uses the variables already projected with a different command. 
 
@@ -59,41 +59,41 @@ The first line creates new variables that are the residualized variables. The se
 Sometimes the same set of group identifiers have to be used to run several specifications.
 In these cases, one can save computation time by reusing some of the previous computations.
 The second and more advanced way to interact with the algorithm is to exploit this feature by using the functions  
-`twowayset` `projvar` and `twowayreg`.
+`twset` `twres` and `twest`.
 
-`twowayset` uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications. You have the option to save these arrays adding `using` and a path. Otherwise, the matrices will be saved in `eresults`. STATA may fail if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
+`twset` uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications. You have the option to save these arrays adding `using` and a path. Otherwise, the matrices will be saved in `eresults`. STATA may fail if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
 If the group identifiers are not consecutive after dropping redundants and missing observations, then you have the option `generate()` to create new group identifiers.
 
 Examples:
 ```
-.twowayset hhid tid, gen(newids newts)
-.twowayset hhid tid
-.twowayset hhid tid w, gen(newids newts)
-.twowayset hhid tid w
-.twowayset hhid tid using "../folder/x", gen(newids newts)
-.twowayset hhid tid using "../folder/x"
+.twset hhid tid, gen(newids newts)
+.twset hhid tid
+.twset hhid tid w, gen(newids newts)
+.twset hhid tid w
+.twset hhid tid using "../folder/x", gen(newids newts)
+.twset hhid tid using "../folder/x"
 
 ```
 The first two lines assign each observation a weight of one (default. The second pair of lines assign to each observation the weight given by variable w. The last two lines save the arrays in "folder" with the prefix "x"
 You can use if and in in this command. This is extremely important if there is a variable that has missing values.
 
-`projvar` performs the second step of the algorithm. It is followed by a list of variables. These variables are projected onto the set of dummies, and the residual of this projection is saved as additional variables with a new prefix. Alternatively, you may choose to replace the existing variables. For example:
+`twres` performs the second step of the algorithm. It is followed by a list of variables. These variables are projected onto the set of dummies, and the residual of this projection is saved as additional variables with a new prefix. Alternatively, you may choose to replace the existing variables. For example:
 
 ```
-.projvar y x1 x2, p(w_)
-.projvar y x1 x2, replace
-.projvar y x1 x2 using "../folder/x", p(w_)
+.twres y x1 x2, p(w_)
+.twres y x1 x2, replace
+.twres y x1 x2 using "../folder/x", p(w_)
 ```
-If you used `using` to save the matrices in `twowayset`, use the same path to recover them and use them in `projvar`. Otherwise, `projvar` will use the matrices stored in ereturn.
+If you used `using` to save the matrices in `twset`, use the same path to recover them and use them in `twres`. Otherwise, `twres` will use the matrices stored in ereturn.
 If a missing value exist in one of the variables projected there will be an error indacating that the variable cannot be residualized.
 
-twowayreg performs the last step of the algorithm, making the regression of the projected variables. Here you can select the type or regression and calculate the standard errors as in twowaywrapper. For example:
+twest performs the last step of the algorithm, making the regression of the projected variables. Here you can select the type or regression and calculate the standard errors as in twfe. For example:
 ```
-.twowayreg reg w_y w_x*, vce(cluster hhid)
+.twest reg w_y w_x*, vce(cluster hhid)
 
 ```
 
-If you already run `twowayset` you can save the matrixes in a folder to not re-calculate them. 
+If you already run `twset` you can save the matrixes in a folder to not re-calculate them. 
 The comand `towaysave` will complete this task and the command `twowayload` load the matrixes saved previously. Both of them can be followed by `using` to select the path where the matrixes will be saved. If using option is ommited the arrays will we stored in the current directory.
 ```
 .twowaysave using "../folder/x"
@@ -104,14 +104,14 @@ In this example the matrixes will be saved in "folder" with the prefix "x", then
 
 ## What's in this repo?
 
-* twowayreg.ado
+* twest.ado
 * example.do
 
 
 ## Set up and Installation
 
 ### One-time use
-Download this repository and extract it. From the directory where this README.MD file is located type ` do twowayreg.ado` in the R console.
+Download this repository and extract it. From the directory where this README.MD file is located type ` do twest.ado` in the R console.
 
 ### Manual Installation
 
@@ -129,7 +129,7 @@ The variance formula will be:
 
 where:
 
-![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is variance-covariance matrix calculated by the command choosen in twowayreg or twowayregwrap.
+![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is variance-covariance matrix calculated by the command choosen in twest or twfe.
 
 `qc`, a degree of freedom correction necessary to calculate correctly the variance-covarinace matrix.
 

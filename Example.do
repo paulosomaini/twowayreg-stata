@@ -56,9 +56,9 @@ forvalues var = 1/`vars' {
 	}
 
 *** 2) Run Our procedure
-twowayset hid tid, nogen
-projvar y x*,p(w_)
-twowayreg w_y w_x* , robust
+twset hid tid, nogen
+twres y x*,p(w_)
+twest w_y w_x* , robust
 
 drop w_* 
 
@@ -71,15 +71,15 @@ save Example2.dta,replace
 clear all
 do twowayreg.ado
 use Example2.dta
-twowayregwrap reg y x1-x3,absorb(hid tid) newv(w_) 
-twowayregwrap reg w_y w_x*, noproj newv(w_) vce(cluster hid)
+twfe reg y x1-x3,absorb(hid tid) newv(w_) 
+twfe reg w_y w_x*, noproj newv(w_) vce(cluster hid)
 
 *** 2) Run Our procedure
-twowayset hid tid
-projvar y x1, p(w_)
-twowayreg reg w_y w_x1
-projvar x2, p(w_)
-twowayreg reg w_y w_x*,vce(robust)
+twset hid tid
+twres y x1, p(w_)
+twest reg w_y w_x1
+twres x2, p(w_)
+twest reg w_y w_x*,vce(robust)
 drop w_*
 
 
@@ -87,5 +87,5 @@ drop w_*
 clear all
 do twowayreg.ado
 use Example2.dta
-twowayregwrap sureg (y x1-x3) ,absorb(hid tid) newv(w_) 
-twowayregwrap reg w_y w_x*, noproj newv(w_) 
+twfe sureg (y x1-x3) ,absorb(hid tid) newv(w_) 
+twfe reg w_y w_x*, noproj newv(w_) 

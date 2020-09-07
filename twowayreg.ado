@@ -1,5 +1,5 @@
-capture program drop twowayregwrap
-capture program drop twowayset
+capture program drop twfe
+capture program drop twset 
 capture program drop nonredundants
 capture mata mata drop sparse()
 capture mata mata drop excludemissing()
@@ -196,7 +196,7 @@ syntax varlist(min=2 max=2) [if] [in], GENerate(name)
 
 gettoken twoway_id twoway_t: varlist
 
-	*touse_red is created to pass the if and in options of twowayset or twowayload to nonredundants 
+	*touse_red is created to pass the if and in options of twset or twowayload to nonredundants 
 	tempvar touse_red
 	mark `generate' `if' `in'
 	
@@ -218,14 +218,14 @@ gettoken twoway_id twoway_t: varlist
 end
 
 
-program define twowayset, eclass sortpreserve
+program define twset, eclass sortpreserve
 version 11
 syntax varlist(min=2 max=3) [if] [in] [using/], [GENerate(namelist min=2 max=2) Nogen] 
 gettoken twoway_id aux: varlist
 gettoken twoway_t twoway_w: aux
 
 	qui{
-	*if and in options to twowayset
+	*if and in options to twset  
 	tempvar touse_set
 	mark `touse_set' `if' `in'
 	markout `touse_set' `varlist'
@@ -293,7 +293,7 @@ else{
 end
 
 
-capture program drop projvar
+capture program drop twres
 capture mata mata drop projVar()
 
 
@@ -384,7 +384,7 @@ end
 
 
 
-program define projvar, nclass
+program define twres, nclass
 version 11
 syntax varlist [using/], [Prefix(name)] [REPLACE]
 
@@ -433,7 +433,7 @@ foreach currvar of varlist `varlist'{
 	*check if e() has not been rewritten
 	capt confirm scalar e(dimN)
 	if _rc { 
-	   di "{err} The e() has been rewritten, please run twowayset again."
+	   di "{err} The e() has been rewritten, please run twset again."
 	   exit
 	}
 	
@@ -728,10 +728,10 @@ else {
 end
 
 capture mata mata drop mata_matrix()
-capture program drop twowayreg 
+capture program drop twest 
 
 
-program define twowayreg, eclass sortpreserve
+program define twest, eclass sortpreserve
     version 11
  
     syntax anything,  [,VCE(namelist) statadof] 
@@ -745,7 +745,7 @@ program define twowayreg, eclass sortpreserve
 	*check if e() has not been rewritten
 	capt confirm scalar e(dimN)
 	if _rc { 
-	   di "{err} The e() has been rewritten, please run twowayset again."
+	   di "{err} The e() has been rewritten, please run twset again."
 	   exit
 	}
 	
@@ -917,7 +917,7 @@ end
  
 
 
-program define twowayregwrap, eclass sortpreserve
+program define twfe, eclass sortpreserve
 version 11
 syntax anything [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
 local anything `anything'
@@ -987,7 +987,7 @@ local projvarlist : list uniq projvarlist
 	capt assert inlist( "`using'", "")
 	if !_rc { 
 	*make the whole regression without creating new fixed effects
-	twowayset `absorb' if `touse_wrap'
+	twset `absorb' if `touse_wrap'
 	gettoken twoway_id twoway_t : absorb
 	if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 		capture confirm variable `newvars'
@@ -995,22 +995,22 @@ local projvarlist : list uniq projvarlist
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-			projvar `projvarlist', p(`newvars')
-			twowayreg `anythingout', vce(`vce') `statadof'
+			twres `projvarlist', p(`newvars')
+			twest `anythingout', vce(`vce') `statadof'
 		  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `projvarlist', replace
-		twowayreg `anything' , vce(`vce') `statadof'
+		twres `projvarlist', replace
+		twest `anything' , vce(`vce') `statadof'
 			
 	}
 	}
 	else{
 		*make the whole regression without creating new fixed effects
-		twowayset `absorb' if `touse_wrap' using "`using'"
+		twset `absorb' if `touse_wrap' using "`using'"
 		gettoken twoway_id twoway_t : absorb
 		if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
 			capture confirm variable `newvars'
@@ -1018,14 +1018,14 @@ local projvarlist : list uniq projvarlist
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-				  	projvar `projvarlist' using "`using'", p(`newvars')
-					twowayreg `anythingout', vce(`vce') `statadof'
+				  	twres `projvarlist' using "`using'", p(`newvars')
+					twest `anythingout', vce(`vce') `statadof'
 				  }
 					
 		}
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		     projvar `projvarlist' using "`using'", replace
-			 twowayreg `anything' , vce(`vce') `statadof'
+		     twres `projvarlist' using "`using'", replace
+			 twest `anything' , vce(`vce') `statadof'
 			
 	}
 		
@@ -1036,7 +1036,7 @@ local projvarlist : list uniq projvarlist
 	capt assert inlist( "`using/'", "")
 	if !_rc {
 	*make the whole regression creating new fixed effects
-	twowayset `absorb' if `touse_wrap' , gen(`generate')
+	twset `absorb' if `touse_wrap' , gen(`generate')
 	gettoken twoway_new_id twoway_new_t : generate
 
 	 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
@@ -1045,21 +1045,21 @@ local projvarlist : list uniq projvarlist
                  di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 				}
         else {
-			projvar `projvarlist', p(`newvars')
-			twowayreg `anythingout', vce(`vce') `statadof'
+			twres `projvarlist', p(`newvars')
+			twest `anythingout', vce(`vce') `statadof'
 			  }
 				
 	}
 		
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		projvar `projvarlist', replace
-		twowayreg `anything' , vce(`vce') `statadof'
+		twres `projvarlist', replace
+		twest `anything' , vce(`vce') `statadof'
 		
 	}
 	}
 	else{
-		twowayset `absorb' if `touse_wrap' using "`using'", gen(`generate')
+		twset `absorb' if `touse_wrap' using "`using'", gen(`generate')
 		gettoken twoway_new_id twoway_new_t : generate
 
 		 if ("`NEWVars(`name')'"=="`newvars(`name')'" & "`replace'"==""){
@@ -1068,16 +1068,16 @@ local projvarlist : list uniq projvarlist
 					 di "{err} There is at least one variable with the same prefix chosen, please change the prefix or drop the variable"
 					}
 			else {
-					projvar `projvarlist' using "`using'", p(`newvars')
-					twowayreg `anythingout', vce(`vce') `statadof'
+					twres `projvarlist' using "`using'", p(`newvars')
+					twest `anythingout', vce(`vce') `statadof'
 				}
 					
 		}
 			
 			
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
-		     projvar `projvarlist' using "`using'", replace
-			 twowayreg `anything' , vce(`vce') `statadof'
+		     twres `projvarlist' using "`using'", replace
+			 twest `anything' , vce(`vce') `statadof'
 			
 	}
 		
@@ -1086,7 +1086,7 @@ local projvarlist : list uniq projvarlist
 }
 else if ("`noproj'"=="noproj"){
 	*option just to make the regression without setting the fixed effects or projecting varlist
-	twowayreg `anything', vce(`vce') `statadof'
+	twest `anything', vce(`vce') `statadof'
 }
 
 

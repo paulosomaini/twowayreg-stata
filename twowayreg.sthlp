@@ -3,29 +3,27 @@
 {vieweralsosee "" "--"}{...}
 {vieweralsosee "Install command2" "ssc install command2"}{...}
 {vieweralsosee "Help command2 (if installed)" "help command2"}{...}
-{viewerjumpto "Syntax" "twowayreg##syntax"}{...}
-{viewerjumpto "Description" "twowayreg##description"}{...}
-{viewerjumpto "Options" "twowayreg##options"}{...}
-{viewerjumpto "Remarks" "twowayreg##remarks"}{...}
-{viewerjumpto "Examples" "twowayreg##examples"}{...}
+{viewerjumpto "Syntax" "twest##syntax"}{...}
+{viewerjumpto "Description" "twest##description"}{...}
+{viewerjumpto "Options" "twest##options"}{...}
+{viewerjumpto "Remarks" "twest##remarks"}{...}
+{viewerjumpto "Examples" "twest##examples"}{...}
 {title:Title}
 {phang}
-{bf:twowayregwrap} {hline 2} Algorithm to efficiently estimate a two-way fixed effects model based on Somaini and Wolak(2016).
+{bf:twfe} {hline 2} Algorithm to efficiently estimate a two-way fixed effects model based on Somaini and Wolak(2016).
 
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
-{cmdab:twowayregwrap} command varlist
+{cmdab:twfe} command varlist
 [{help if}]
 [{help in}]
 [{help using}]
 [{cmd:,}
 {it:options}]
 
-{marker description}{...}
-{title:Varlist}
 {pstd}
-The syntaxis of the varlist replicates the syntaxis of the original command. 
+Command contains the type of regression. For example you could choose to run: reg, ivreg or sureg. The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original cmd. {p_end}
 
 {synoptset 20 tabbed}{...}
 {synopthdr}
@@ -54,7 +52,7 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {marker description}{...}
 {title:Description}
 {pstd}
-{cmd:twowayregwrap} is an algorithm to estimate the two-way fixed effect linear model. The algorithm relies on the Frisch-Waugh-Lovell theorem and applies to ordinary least squares (OLS), two-stage least squares (TSLS) and GMM estimators. {p_end}
+{cmd:twfe} is an algorithm to estimate the two-way fixed effect linear model. The algorithm relies on the Frisch-Waugh-Lovell theorem and applies to ordinary least squares (OLS), two-stage least squares (TSLS) and GMM estimators. {p_end}
 
 
 {marker options}{...}
@@ -84,9 +82,17 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 
 {marker examples}{...}
 {title:Examples}
-{pstd}twowayregwrap reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)  {p_end}
-{pstd}twowayregwrap reg w_y w_x1, noproj vce(cluster hhid)  {p_end}
-{pstd}twowayregwrap ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)  {p_end}
+{pstd}twfe reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)  {p_end}
+{pstd}twfe reg w_y w_x1, noproj vce(cluster hhid)  {p_end}
+{pstd}twfe ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)  {p_end}
+
+
+{title:Possible Pitfalls and Common Mistakes}
+{p2col 8 12 12 2: 1.} The algorithm will not work if the fixed effects after the cleaning of the redundants and missing observations are not consecutives and the generate option is not used. {p_end}
+{p2col 8 12 12 2: 2.} The algorithm will not work if the user tries to create with "generate" or with "newvars" new variables with a name that already exits. {p_end}
+{p2col 8 12 12 2: 3.} vce option is not allowed if the command selected is "sureg". {p_end}
+{p2col 8 12 12 2: 4.} It will be an error if the user has in the database a variable with a name of a command such as reg (commonly used for variables of region).{p_end}
+{p2col 8 12 12 2: 5.} Factor-variable and time-series operators not allowed.{p_end}
 
 {synoptline}
 {p2colreset}{...}
@@ -94,12 +100,12 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 
 {title:Advanced}
 {pstd}
-Sometimes the same set of group identifiers have to be used to run several specifications. In these cases, one can save computation time by reusing some of the previous computations. The second and more advanced way to interact with the algorithm is to exploit this feature by using the functions "twowayset"(uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications), "projvar"(performs the second step of the algorithm) and "twowayreg"(performs the last step of the algorithm, making the regression of the projected variables).{p_end}
+Sometimes the same set of group identifiers have to be used to run several specifications. In these cases, one can save computation time by reusing some of the previous computations. The second and more advanced way to interact with the algorithm is  to  exploit this feature by using the functions "twset"(uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications), "twres"(performs the second step of the algorithm) and "twest"(performs the last step of the algorithm, making the regression of the projected variables).
 
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
-{cmdab:twowayset} FixedEffects 
+{cmdab:twset} FixedEffects 
 [{help weight}]
 [{help if}]
 [{help in}]
@@ -115,18 +121,23 @@ Sometimes the same set of group identifiers have to be used to run several speci
 
 {marker examples}{...}
 {title:Examples}
-{pstd}twowayset hhid tid, gen(newids newts)  {p_end}
-{pstd}twowayset hhid tid  {p_end}
-{pstd}twowayset hhid tid w, gen(newids newts)  {p_end}
-{pstd}twowayset hhid tid w  {p_end}
-{pstd}twowayset hhid tid using "../folder/x", gen(newids newts)  {p_end}
-{pstd}twowayset hhid tid using "../folder/x"  {p_end}
+{pstd}twset hhid tid, gen(newids newts)  {p_end}
+{pstd}twset hhid tid  {p_end}
+{pstd}twset hhid tid w, gen(newids newts)  {p_end}
+{pstd}twset hhid tid w  {p_end}
+{pstd}twset hhid tid using "../folder/x", gen(newids newts)  {p_end}
+{pstd}twset hhid tid using "../folder/x"  {p_end}
+
+{title:Possible Pitfalls and Common Mistakes}
+{p2col 8 12 12 2: 1.} The algorithm will not work if the fixed effects after the cleaning of the redundants and missing observations are not consecutives and the {opth gen:erate}  option is not used. {p_end}
+{p2col 8 12 12 2: 2.} In this command the user has to use the if option to discard the missing observations of the variables that will be used in the next steps.{p_end}
+{p2col 8 12 12 2: 3.} generate option: The algorithm wil break if the user tries to create a new variable with a name that already exists.{p_end}
 
 
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
-{cmdab:projvar} varlist
+{cmdab:twres} varlist
 [{help using}]
 [{cmd:,}
 {it:options}]
@@ -138,18 +149,24 @@ Sometimes the same set of group identifiers have to be used to run several speci
 {synopt:{opt p:refix(name)}} creates new variables that are the residual projection of the originals {p_end}
 {synopt:{opt replace}} replace the existing variables by their residual projection {p_end}
 
+{title:Possible Pitfalls and Common Mistakes}
+{p2col 8 12 12 2: 1.} newvars option:It will be an error if the use tries to create a variable that already exists.{p_end}
+{p2col 8 12 12 2: 2.} If using option is omitted: it will an error if the user runs twset or twest and then another command since projvar needs the eresults from twset or twest.{p_end}
+{p2col 8 12 12 2: 3.} If some of the variables has missing values the command will break.{p_end}
+{p2col 8 12 12 2: 4.} Factor-variable and time-series operators not allowed.{p_end}
+
 
 {marker examples}{...}
 {title:Examples}
-{pstd}projvar y x1 x2, p(w_)  {p_end}
-{pstd}projvar y x1 x2, replace  {p_end}
-{pstd}projvar y x1 x2 using "../folder/x", p(w_)  {p_end}
+{pstd}twres y x1 x2, p(w_)  {p_end}
+{pstd}twres y x1 x2, replace  {p_end}
+{pstd}twres y x1 x2 using "../folder/x", p(w_)  {p_end}
 
 
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
-{cmdab:twowayreg} command varlist
+{cmdab:twest} command varlist
 [{cmd:,}
 {it:options}]
 
@@ -160,11 +177,15 @@ Sometimes the same set of group identifiers have to be used to run several speci
 {p2coldent:+ {opt vce}{cmd:(}{help vcetype}{cmd:)}}{it:vcetype}
 may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p_end}
 
+{title:Possible Pitfalls and Common Mistakes}
+{p2col 8 12 12 2: 1.}If using option is omitted: it will an error if the user runs twres and then another command since projvar needs the eresults from twres.{p_end}
+{p2col 8 12 12 2: 2.} It will be an error if the use tries to use vce option will sureg command.{p_end}
+{p2col 8 12 12 2: 3.} Factor-variable and time-series operators not allowed.{p_end}
 
 {marker examples}{...}
 {title:Examples}
-{pstd}twowayreg reg w_y w_x*, vce(cluster hhid)  {p_end}
-{pstd}twowayreg ivregress w_y w_x1 w_x2 (w_x3= w_x4 w_x5), vce(robust)  {p_end}
+{pstd}twest reg w_y w_x*, vce(cluster hhid)  {p_end}
+{pstd}twest ivregress w_y w_x1 w_x2 (w_x3= w_x4 w_x5), vce(robust)  {p_end}
 
 {synoptline}
 {p2colreset}{...}
@@ -214,13 +235,6 @@ If {cmd:e(dimN)}>={cmd:e(dimT)}{p_end}
 {synopt:{cmd:e(sample)}} marks estimation sample{p_end}
 {p2colreset}{...}
 
-
-{marker contact}{...}
-{title:Author}
-{pstd}Paulo Somaini{break}
-Stanford GSB{break}
-Email: {browse "mailto:soma@stanford.edu":soma@stanford.edu}
-{p_end}
 
 {title:References}
 {phang}
