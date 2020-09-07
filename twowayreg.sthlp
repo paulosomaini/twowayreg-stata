@@ -94,7 +94,7 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 
 {title:Advanced}
 {pstd}
-Sometimes the same set of group identifiers have to be used to run several specifications. In these cases, one can save computation time by reusing some of the previous computations. The second and more advanced way to interact with the algorithm is to exploit this feature by using the functions "twowayset" (uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications), "projvar"(performs the second step of the algorithm) and "twowayreg"(performs the last step of the algorithm, making the regression of the projected variables).{p_end}
+Sometimes the same set of group identifiers have to be used to run several specifications. In these cases, one can save computation time by reusing some of the previous computations. The second and more advanced way to interact with the algorithm is to exploit this feature by using the functions "twowayset"(uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications), "projvar"(performs the second step of the algorithm) and "twowayreg"(performs the last step of the algorithm, making the regression of the projected variables).{p_end}
 
 {marker syntax}{...}
 {title:Syntax}
@@ -171,12 +171,51 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {p 4 6 2}
 
 {title:Stored results}
-In eresults results will be all the eresults of the original command selected plus the matrixes and scalars needed for the regressions.  {p_end}
+{pstd}
+{it:Note: In ereturn will be all the eresults of the original command selected plus the matrices and scalars needed for the algorithm.} 
 
-If using option is omitted:
 {synoptset 15 tabbed}{...}
+{syntab:Scalars}
+{synopt:{cmd:e(dof_adj)}} Degree of freedom adjustment {p_end}
+{synopt:{cmd:e(dimN)}} number of first fixed effect without the redundants observations{p_end}
+{synopt:{cmd:e(dimT)}} number of second fixed effect without the redundants observations{p_end}
+{synopt:{cmd:e(nested_adj)}} Adjustment in the degree of freedom if one of the fixed effect or both of them are nested within the cluster var {p_end}
+{synopt:{cmd:e(rank_adj)}} Adjustment based on the rank of {cmd:e(A)} if {cmd:e(dimN)}<{cmd:e(dimT)}, otherwise is based on the rank of {cmd:e(C)}{p_end}
+
+{synoptset 15 tabbed}{...}
+{syntab:Macros}
+{synopt:{cmd:e(absorbed)}} name of the fixed effects absorbed and the weight variable {p_end}
+
+{synoptset 15 tabbed}{...}
+{syntab:Matrices}
+{synopt:{cmd:e(b)}} coefficient vector{p_end}
+{synopt:{cmd:e(V)}} variance-covariance matrix adjusted of the estimators {p_end}
 
 
+{p 8 8 1}
+If "using" is omitted{p_end}
+{p 8 8 1}{cmd:e(invDD)} is a vector of (dimN)x1 taking the diagonal elements of the inverse of the matrix D'D{p_end}
+{p 8 8 1}{cmd:e(invHH)} is a vector of (dimT-1)x1 taking the diagonal elements of the inverse of the matrix H'H {p_end}
+{p 8 8 1}{cmd:e(B)} Matrix B needed for the first and second step of the algorithm {p_end}
+
+
+{p 12 8 1}If {cmd:e(dimN)}<{cmd:e(dimT)}{p_end}
+{p 12 8 1}{cmd:e(A)} Matrix A needed for the first and second step of the algorithm{p_end}
+{p 12 8 1}{cmd:e(CinvHHDH)} Matrix CinvHHDH needed for the first and second step of the algorithm{p_end}
+
+{p 12 8 1}
+If {cmd:e(dimN)}>={cmd:e(dimT)}{p_end}
+{p 12 8 1}{cmd:e(C)} Matrix C needed for the first and second step of the algorithm{p_end}
+{p 12 8 1}{cmd:e(AinvDDDH)} Matrix AinvDDDH needed for the first step of the algorithm{p_end}
+
+
+{synoptset 15 tabbed}{...}
+{syntab:Functions}
+{synopt:{cmd:e(sample)}} marks estimation sample{p_end}
+{p2colreset}{...}
+
+
+{marker contact}{...}
 {title:Author}
 {pstd}Paulo Somaini{break}
 Stanford GSB{break}

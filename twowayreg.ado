@@ -753,7 +753,7 @@ program define twowayreg, eclass sortpreserve
 	scalar dimN= e(dimN)
 	scalar dimT= e(dimT)
 	scalar rank_adj=e(rank_adj)
-	capt confirm matrix invDD
+	capt confirm matrix e(invDD)
 	if !_rc { 
 		matrix invDD=e(invDD)
 		matrix invHH=e(invHH)
