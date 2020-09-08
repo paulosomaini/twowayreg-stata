@@ -94,13 +94,13 @@ twest performs the last step of the algorithm, making the regression of the proj
 ```
 
 If you already run `twset` you can save the matrixes in a folder to not re-calculate them. 
-The comand `towaysave` will complete this task and the command `twowayload` load the matrixes saved previously. Both of them can be followed by `using` to select the path where the matrixes will be saved. If using option is ommited the arrays will we stored in the current directory.
+The comand `twsave` will complete this task and the command `twload` load the matrixes saved previously. Both of them can be followed by `using` to select the path where the matrixes will be saved. If using option is ommited the arrays will we stored in the current directory.
 ```
-.twowaysave using "../folder/x"
+.twsave using "../folder/x"
 ....
-.twowayload using "../folder/x"
+.twload using "../folder/x"
 ```
-In this example the matrixes will be saved in "folder" with the prefix "x", then you can close STATA and use `twowayload` to load the arrays.
+In this example the matrixes will be saved in "folder" with the prefix "x", then you can close STATA and use `twload` to load the arrays.
 
 ## What's in this repo?
 

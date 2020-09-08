@@ -196,7 +196,7 @@ syntax varlist(min=2 max=2) [if] [in], GENerate(name)
 
 gettoken twoway_id twoway_t: varlist
 
-	*touse_red is created to pass the if and in options of twset or twowayload to nonredundants 
+	*touse_red is created to pass the if and in options of twset or twload to nonredundants 
 	tempvar touse_red
 	mark `generate' `if' `in'
 	
@@ -488,7 +488,7 @@ foreach currvar of varlist `varlist'{
 
 end
 
-capture program drop twowaysave
+capture program drop twsave
 capture mata mata drop matasave()
 
 mata
@@ -551,7 +551,7 @@ saveMat(root,"twoWayInvHH", invHH)
 end
 
 
-program define twowaysave, eclass
+program define twsave, eclass
 version 11
 syntax [using/]
 
@@ -610,7 +610,7 @@ else {
 
 end
 
-capture program drop twowayload
+capture program drop twload
 capture mata mata drop mataload()
 
 mata
@@ -668,7 +668,7 @@ st_matrix("e(invHH)",invHH)
 end
 
 
-program define twowayload, eclass
+program define twload, eclass
 version 11
 syntax [using/] [if] [in]
 mata mataload()

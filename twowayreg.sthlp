@@ -102,6 +102,10 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {pstd}
 Sometimes the same set of group identifiers have to be used to run several specifications. In these cases, one can save computation time by reusing some of the previous computations. The second and more advanced way to interact with the algorithm is  to  exploit this feature by using the functions "twset"(uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications), "twres"(performs the second step of the algorithm) and "twest"(performs the last step of the algorithm, making the regression of the projected variables).
 
+{pstd}
+Also if "twset" is already ran the matrixes can be saved in a folder to not re-calculate them. The comand "twsave" will complete this task and the command "twload" load the matrixes saved previously. With this two commands the user can close STATA and still does not have to calculate them again.
+
+
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
@@ -187,9 +191,52 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {pstd}twest reg w_y w_x*, vce(cluster hhid)  {p_end}
 {pstd}twest ivregress w_y w_x1 w_x2 (w_x3= w_x4 w_x5), vce(robust)  {p_end}
 
+{marker syntax}{...}
+{title:Syntax}
+{p 8 17 2}
+{cmdab:twsave} 
+{cmd:}
+[{help using}]
+
+{synoptset 20 tabbed}{...}
+{synopthdr}
+{synoptline}
+{synopt:{opt {help using}}} followed by a path will save a set of matrices in that path. If using option is omitted the matrices will be stored in the current directory {p_end}
+
+{title:Possible Pitfalls and Common Mistakes}
+{p2col 8 12 12 2: 1.} This command only work if "twset" has been ran previously and the e() has not been re-written. 
+
+{marker examples}{...}
+{title:Examples}
+{pstd}twsave using "../folder/x" {p_end}
+{pstd} In this example the matrices will be saved in "folder" with prefix "x".
+
+
+{marker syntax}{...}
+{title:Syntax}
+{p 8 17 2}
+{cmdab:twload} 
+{cmd:}
+[{help using}]
+
+{synoptset 20 tabbed}{...}
+{synopthdr}
+{synoptline}
+{synopt:{opt {help using}}} followed by a path will load the set of matrices that has been saved in that path. If using option is omitted command will search for matrices in the current directory. {p_end}
+
+{title:Possible Pitfalls and Common Mistakes}
+{p2col 8 12 12 2: 1.} This command will work only if there are matrices saved in a folder. 
+
+{marker examples}{...}
+{title:Examples}
+{pstd}twload using "../folder/x" {p_end}
+{pstd} In this example the matrices will be load from "folder" with prefix "x".
+
 {synoptline}
 {p2colreset}{...}
 {p 4 6 2}
+
+
 
 {title:Stored results}
 {pstd}
