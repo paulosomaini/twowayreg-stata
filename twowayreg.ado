@@ -128,14 +128,17 @@ invHH=HH:^-1
 
 N=colmax(D)[.,1]
 T=colmax(D)[.,2]
+//save the scalar in eresults	
 st_numscalar("e(dimN)",N)
 st_numscalar("e(dimT)",T)
 
+//save the matrices in eresults
 if (save_to_e>0){
 	st_matrix("e(invDD)",invDD)
 	st_matrix("e(invHH)",invHH) 
 
 }
+//save the scalars and matrices the current directory or in the path selected
 else
 {
 	saveMat(root,"twoWayN1", N)
@@ -151,11 +154,13 @@ if (N<T)
 		A=invsym(diagminus(DD,CinvHHDH'*DH'))
 		corection_rank= N-rank(A)
         B=-A*CinvHHDH'
+		//save the matrices in eresults
 		if (save_to_e>0){
 			st_matrix("e(CinvHHDH)",CinvHHDH)
 			st_matrix("e(A)",A)
 			st_matrix("e(B)",B)
 		}
+		//save the matrices the current directory or in the path selected
 		else{
 			saveMat(root,"twoWayCinvHHDH", CinvHHDH)
 			saveMat(root,"twoWayA", A)
@@ -171,11 +176,14 @@ if (N<T)
 		corection_rank= T-rank(C)
         B=-AinvDDDH*C
 
+		//save the matrices in eresults
 		if (save_to_e>0){
 			st_matrix("e(AinvDDDH)",AinvDDDH)
 			st_matrix("e(C)",C)
 			st_matrix("e(B)",B)
 		}
+		
+		//save the matrices the current directory or in the path selected		
 		else{
 			saveMat(root,"twoWayAinvDDDH", AinvDDDH)
 			saveMat(root,"twoWayC", C)
@@ -185,6 +193,7 @@ if (N<T)
 
 		
     }
+//save the scalar in eresults	
 st_numscalar("e(rank_adj)",corection_rank)
  }
  
@@ -244,8 +253,7 @@ gettoken twoway_t twoway_w: aux
 	
 	ereturn post, esample(`touse_set3')
 }
-
-	*option nogen to not generate extra fixed effects, this command is useful if the fixed effects are consecutives
+	*if generate option is omitted there is no creation of extra fixed effects consecutives
 	capt assert inlist( "`generate'", "")
 	if !_rc { 
 		sort `twoway_id' `twoway_t'
@@ -327,7 +335,6 @@ void projVar()
 	
 	V[.,3]=V[.,3]:*D[.,3]
 	aux=sparse(V)
-	//printf("3")
 	Dy=rowsum(aux)
 	Dy=Dy
 	Ty=colsum(aux)
@@ -335,11 +342,13 @@ void projVar()
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
 	correction_rank=st_numscalar("e(rank_adj)")
+	//load the matrices from eresults
 	if (save_to_e>0){
-
+		
 		B=st_matrix("e(B)")
 	}
 	else{
+		//load the matrices from using option
 		N=readMat(root,"twoWayN1")
 		T=readMat(root,"twoWayN2")
 		B=readMat(root,"twoWayB")
@@ -768,7 +777,7 @@ program define twest, eclass sortpreserve
 			matrix B=e(B)
 		}	
 	}
-	*take regtype to make sure that the command work under certains types of regressions
+	*take regtype to differentiate between estimation commands
 	gettoken regtype varlist: anything
     
 	if ("`regtype'"=="sureg"){
@@ -931,6 +940,7 @@ local anything= subinstr("`anything'",",", " , ",.)
 local anythingout 
 local isvarlist
 local projvarlist
+*create a varlist to project them-separate the variables from the commands and notation
 foreach x of local anything {
 	local  isvarlist = 0
 

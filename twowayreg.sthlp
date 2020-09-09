@@ -10,7 +10,7 @@
 {viewerjumpto "Examples" "twest##examples"}{...}
 {title:Title}
 {phang}
-{bf:twfe} {hline 2} Algorithm to efficiently estimate a two-way fixed effects model based on Somaini and Wolak(2016).
+{bf:twfe} {hline 2} Algorithm to efficiently estimate a two-way fixed effects model based on Somaini and Wolak (2016).
 
 {marker syntax}{...}
 {title:Syntax}
@@ -23,7 +23,7 @@
 {it:options}]
 
 {pstd}
-Command contains the type of regression. For example you could choose to run: reg, ivreg or sureg. The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original cmd. {p_end}
+Command is an estimation command, e.g., regress, ivregress, sureg. The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original estimation command. {p_end}
 
 {synoptset 20 tabbed}{...}
 {synopthdr}
@@ -31,10 +31,16 @@ Command contains the type of regression. For example you could choose to run: re
 {synopt:{opt {help using}}} followed by a path will save a set of matrices in that path. If using option is omitted the matrices will be stored in eresults {p_end}
 
 {syntab:Required in the first regression}
-{synopt:{opt abs:orb(absvars weight)}} categorical variables that indetify the fixed effects to be absorbed and the weight {p_end}
-{synopt:{opt gen:erate(newvars)}} to create new group identifiers {p_end}
-{synopt:{opt newv:ars(name)}} to create residualized variables with the prefix in "newvars" {p_end}
-{synopt:{opt replace}} replace the variables for their residualized version {p_end}
+{synopt:{opt abs:orb(absvars weight)}} two categorical variables that indetify the fixed effects to be absorbed. Analytic weights can be added as an optional third {p_end}
+{synopt:{opt gen:erate(newvars)}} creates new group identifiers {p_end}
+
+{synopt:{opt newv:ars(name)}} creates residualized variables with 
+the prefix in "newvars" {p_end}
+
+{syntab:or}
+
+{synopt:{opt replace}} replace the variables for their residualized 
+version {p_end}
 
 {syntab:Required for the next regressions}
 {synopt:{opt noproj}} Run the regression without creating any arrays or projecting new variables{p_end}
@@ -65,19 +71,19 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {help using} adding using followed by a path will save a set of matrices in that path. Otherwise, the matrices will be saved in eresults. STATA may fail if it tries to store a matrix that exceeds matsize in ereturn. Adding using avoids that limitation.  {p_end}
 
 {phang}
-{opth abs:orb(absvars weight)}the two levels of fixed effects are specified in this option, it takes at least two variables with group identifiers. The optional third input can be a variable of analytic weights. {p_end}
+{opth abs:orb(absvars weight)} the two levels of fixed effects are specified in this option, it takes at least two variables with group identifiers. The optional third input can be a variable of analytic weights. {p_end}
 
 {phang}
 {opth gen:erate(newvars)} if the group identifiers are not consecutive after dropping redundants and missing observations, then you have this option to create new group identifiers. This option will create new variables in the database. {p_end}
 
 {phang}
-{opth newv:ars(name)} create new variables, the residualized variables will be stored as new variables that will be named with a prefix specified in `newvars'. This option will create new variables in the database.  {p_end}
+{opth newv:ars(name)} create new variables, the residualized variables will be stored as new variables that will be named with a prefix specified in `newvars'. This option will create new variables in the database. See option replace for replacing existing variables. {p_end}
 
 {phang}
-{opt replace} replace the variables for their residualized version. This option will re-write the database. {p_end}
+{opt replace} replace the variables for their residualized version. This option will re-write the database. See option newvars for creating new variables without changing existent ones. {p_end}
 
 {phang}
-{opt noproj} run the regression without creating any arrays or projecting new variables. This option wil take the matrices created and stored in eresults or in the path selected by using option. {p_end}
+{opt noproj} run the regression without creating any arrays or projecting new variables. This option will take the matrices created and stored in eresults or in the path selected by using option. {p_end}
 
 
 {marker examples}{...}
@@ -86,13 +92,14 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {pstd}twfe reg w_y w_x1, noproj vce(cluster hhid)  {p_end}
 {pstd}twfe ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)  {p_end}
 
+{title:Shortcomings}
+{p2col 8 12 12 2: 1.} Factor-variable and time-series operators not allowed.{p_end}
+{p2col 8 12 12 2: 2.} It will be an error if the user has in the database a variable with a name of a command such as reg (commonly used for variables of region).{p_end}
 
-{title:Possible Pitfalls and Common Mistakes}
-{p2col 8 12 12 2: 1.} The algorithm will not work if the fixed effects after the cleaning of the redundants and missing observations are not consecutives and the generate option is not used. {p_end}
+{title:Common Errors}
+{p2col 8 12 12 2: 1.} The algorithm will not work if the fixed effects after the cleaning of the redundants and missing observations are not consecutives and the generate option is not used.{p_end}
 {p2col 8 12 12 2: 2.} The algorithm will not work if the user tries to create with "generate" or with "newvars" new variables with a name that already exits. {p_end}
 {p2col 8 12 12 2: 3.} vce option is not allowed if the command selected is "sureg". {p_end}
-{p2col 8 12 12 2: 4.} It will be an error if the user has in the database a variable with a name of a command such as reg (commonly used for variables of region).{p_end}
-{p2col 8 12 12 2: 5.} Factor-variable and time-series operators not allowed.{p_end}
 
 {synoptline}
 {p2colreset}{...}
@@ -132,10 +139,12 @@ Also if "twset" is already ran the matrixes can be saved in a folder to not re-c
 {pstd}twset hhid tid using "../folder/x", gen(newids newts)  {p_end}
 {pstd}twset hhid tid using "../folder/x"  {p_end}
 
-{title:Possible Pitfalls and Common Mistakes}
+{title:Shortcomings}
+{p2col 8 12 12 2: 1.} In this command the user has to use the if option to discard the missing observations of the variables that will be used in the next steps.{p_end}
+
+{title:Common Errors}
 {p2col 8 12 12 2: 1.} The algorithm will not work if the fixed effects after the cleaning of the redundants and missing observations are not consecutives and the {opth gen:erate}  option is not used. {p_end}
-{p2col 8 12 12 2: 2.} In this command the user has to use the if option to discard the missing observations of the variables that will be used in the next steps.{p_end}
-{p2col 8 12 12 2: 3.} generate option: The algorithm wil break if the user tries to create a new variable with a name that already exists.{p_end}
+{p2col 8 12 12 2: 2.} generate option: The algorithm wil break if the user tries to create a new variable with a name that already exists.{p_end}
 
 
 {marker syntax}{...}
@@ -153,11 +162,13 @@ Also if "twset" is already ran the matrixes can be saved in a folder to not re-c
 {synopt:{opt p:refix(name)}} creates new variables that are the residual projection of the originals {p_end}
 {synopt:{opt replace}} replace the existing variables by their residual projection {p_end}
 
-{title:Possible Pitfalls and Common Mistakes}
-{p2col 8 12 12 2: 1.} newvars option:It will be an error if the use tries to create a variable that already exists.{p_end}
+{title:Shortcomings}
+{p2col 8 12 12 2: 1.} If some of the variables has missing values the command will break.{p_end}
+{p2col 8 12 12 2: 2.} Factor-variable and time-series operators not allowed.{p_end}
+
+{title:Common Errors}
+{p2col 8 12 12 2: 1.} newvars option:It will be an error if the user tries to create a variable that already exists.{p_end}
 {p2col 8 12 12 2: 2.} If using option is omitted: it will an error if the user runs twset or twest and then another command since projvar needs the eresults from twset or twest.{p_end}
-{p2col 8 12 12 2: 3.} If some of the variables has missing values the command will break.{p_end}
-{p2col 8 12 12 2: 4.} Factor-variable and time-series operators not allowed.{p_end}
 
 
 {marker examples}{...}
@@ -181,10 +192,12 @@ Also if "twset" is already ran the matrixes can be saved in a folder to not re-c
 {p2coldent:+ {opt vce}{cmd:(}{help vcetype}{cmd:)}}{it:vcetype}
 may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p_end}
 
-{title:Possible Pitfalls and Common Mistakes}
+{title:Shortcomings}
+{p2col 8 12 12 2: 1.} Factor-variable and time-series operators not allowed.{p_end}
+
+{title:Common Errors}
 {p2col 8 12 12 2: 1.}If using option is omitted: it will an error if the user runs twres and then another command since projvar needs the eresults from twres.{p_end}
-{p2col 8 12 12 2: 2.} It will be an error if the use tries to use vce option will sureg command.{p_end}
-{p2col 8 12 12 2: 3.} Factor-variable and time-series operators not allowed.{p_end}
+{p2col 8 12 12 2: 2.} It will be an error if the use tries to use vce option will "sureg" command.{p_end}
 
 {marker examples}{...}
 {title:Examples}
@@ -203,7 +216,7 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {synoptline}
 {synopt:{opt {help using}}} followed by a path will save a set of matrices in that path. If using option is omitted the matrices will be stored in the current directory {p_end}
 
-{title:Possible Pitfalls and Common Mistakes}
+{title:Common Errors}
 {p2col 8 12 12 2: 1.} This command only work if "twset" has been ran previously and the e() has not been re-written. 
 
 {marker examples}{...}
@@ -224,7 +237,7 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {synoptline}
 {synopt:{opt {help using}}} followed by a path will load the set of matrices that has been saved in that path. If using option is omitted command will search for matrices in the current directory. {p_end}
 
-{title:Possible Pitfalls and Common Mistakes}
+{title:Common Errors}
 {p2col 8 12 12 2: 1.} This command will work only if there are matrices saved in a folder. 
 
 {marker examples}{...}
