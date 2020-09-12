@@ -737,7 +737,6 @@ else {
 
 end
 
-capture mata mata drop mata_matrix()
 capture program drop twest 
 
 
