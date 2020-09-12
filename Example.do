@@ -1,5 +1,5 @@
 clear all
-do twowayreg.ado
+do twfem.ado
 
 *** 0) Preliminaries
 
@@ -69,10 +69,10 @@ drop w_*
 
 save Example2.dta,replace 
 clear all
-do twowayreg.ado
+do twfem.ado
 use Example2.dta
-twfe reg y x1-x3,absorb(hid tid) newv(w_) 
-twfe reg w_y w_x*, noproj newv(w_) vce(cluster hid)
+twfem reg y x1-x3,absorb(hid tid) newv(w_) 
+twfem reg w_y w_x*, noproj newv(w_) vce(cluster hid)
 
 *** 2) Run Our procedure
 twset hid tid
@@ -87,5 +87,5 @@ drop w_*
 clear all
 do twowayreg.ado
 use Example2.dta
-twfe sureg (y x1-x3) ,absorb(hid tid) newv(w_) 
-twfe reg w_y w_x*, noproj newv(w_) 
+twfem sureg (y x1-x3) ,absorb(hid tid) newv(w_) 
+twfem reg w_y w_x*, noproj newv(w_) 

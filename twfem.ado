@@ -1,4 +1,5 @@
-capture program drop twfe
+*!version 1, Paulo Somaini 12sept2020
+capture program drop twfem
 capture program drop twset 
 capture program drop nonredundants
 capture mata mata drop sparse()
@@ -926,7 +927,7 @@ end
  
 
 
-program define twfe, eclass sortpreserve
+program define twfem, eclass sortpreserve
 version 11
 syntax anything [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
 local anything `anything'

@@ -1,6 +1,6 @@
 # An Algorithm to Estimate the Two-Way Fixed Effect Model
 
-The `twowayreg` package is an algorithm to efficiently estimate a two-way fixed effects model in STATA.  This algorithm is adapted from the [Matlab code](https://soma.people.stanford.edu/research) written for [this paper](https://soma.people.stanford.edu/sites/g/files/sbiybj4171/f/jem-2014-0008.pdf) by Paulo Somaini and Frank A Wolak.  
+The `twfem` package is an algorithm to efficiently estimate a two-way fixed effects model in STATA.  This algorithm is adapted from the [Matlab code](https://soma.people.stanford.edu/research) written for [this paper](https://soma.people.stanford.edu/sites/g/files/sbiybj4171/f/jem-2014-0008.pdf) by Paulo Somaini and Frank A Wolak.  
 
 ## Abstract
 We present an algorithm to estimate the two-way fixed effect linear model. The algorithm relies on
@@ -18,7 +18,7 @@ There are two ways you can interface with the algorithm.
 
 ### Basic
 
-The most basic way is using the command `twfe` to run ordinary least squares. 
+The most basic way is using the command `twfem` to run ordinary least squares. 
 This command runs the whole algorithm. The syntaxis is as follows:
 ```
 .command varlist(numeric ts fv) [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
@@ -48,9 +48,9 @@ The vce() option allows you to choose how to compute standard errors:
 
 Examples:
 ```
-.twfe reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)
-.twfe reg w_y w_x1, noproj vce(cluster hhid)
-.twfe ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)
+.twfem reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)
+.twfem reg w_y w_x1, noproj vce(cluster hhid)
+.twfem ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)
 ```
 The first line creates new variables that are the residualized variables. The second line uses the variables already projected to save time. The third line uses the variables already projected with a different command. 
 
@@ -87,7 +87,7 @@ You can use if and in in this command. This is extremely important if there is a
 If you used `using` to save the matrices in `twset`, use the same path to recover them and use them in `twres`. Otherwise, `twres` will use the matrices stored in ereturn.
 If a missing value exist in one of the variables projected there will be an error indacating that the variable cannot be residualized.
 
-twest performs the last step of the algorithm, making the regression of the projected variables. Here you can select the type or regression and calculate the standard errors as in twfe. For example:
+twest performs the last step of the algorithm, making the regression of the projected variables. Here you can select the type or regression and calculate the standard errors as in twfem. For example:
 ```
 .twest reg w_y w_x*, vce(cluster hhid)
 
@@ -129,7 +129,7 @@ The variance formula will be:
 
 where:
 
-![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is variance-covariance matrix calculated by the command choosen in twest or twfe.
+![second eq](https://latex.codecogs.com/gif.latex?%5Cwidehat%7B%5Cmathbf%7BV%7D%7D) , which is variance-covariance matrix calculated by the command choosen in twest or twfem.
 
 `qc`, a degree of freedom correction necessary to calculate correctly the variance-covarinace matrix.
 

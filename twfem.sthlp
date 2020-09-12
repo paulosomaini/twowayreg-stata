@@ -10,12 +10,12 @@
 {viewerjumpto "Examples" "twest##examples"}{...}
 {title:Title}
 {phang}
-{bf:twfe} {hline 2} Algorithm to efficiently estimate a two-way fixed effects model based on Somaini and Wolak (2016).
+{bf:twfem} {hline 2} Algorithm to efficiently estimate a two-way fixed effects model based on Somaini and Wolak (2016).
 
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
-{cmdab:twfe} command varlist
+{cmdab:twfem} command varlist
 [{help if}]
 [{help in}]
 [{help using}]
@@ -58,7 +58,7 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {marker description}{...}
 {title:Description}
 {pstd}
-{cmd:twfe} is an algorithm to estimate the two-way fixed effect linear model. The algorithm relies on the Frisch-Waugh-Lovell theorem and applies to ordinary least squares (OLS), two-stage least squares (TSLS) and GMM estimators. {p_end}
+{cmd:twfem} is an algorithm to estimate the two-way fixed effect linear model. The algorithm relies on the Frisch-Waugh-Lovell theorem and applies to ordinary least squares (OLS), two-stage least squares (TSLS) and GMM estimators. {p_end}
 
 
 {marker options}{...}
@@ -88,9 +88,9 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 
 {marker examples}{...}
 {title:Examples}
-{pstd}twfe reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)  {p_end}
-{pstd}twfe reg w_y w_x1, noproj vce(cluster hhid)  {p_end}
-{pstd}twfe ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)  {p_end}
+{pstd}twfem reg y x1 x2 x3 x4, absorb(hhid tid w) newv(w_) vce(robust)  {p_end}
+{pstd}twfem reg w_y w_x1, noproj vce(cluster hhid)  {p_end}
+{pstd}twfem ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)  {p_end}
 
 {title:Shortcomings}
 {p2col 8 12 12 2: 1.} Factor-variable and time-series operators not allowed.{p_end}
