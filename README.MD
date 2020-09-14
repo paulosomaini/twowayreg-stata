@@ -105,11 +105,17 @@ In this example the matrixes will be saved in "folder" with the prefix "x", then
 ## What's in this repo?
 
 * twset.ado
+* twset.sthlp
 * twres.ado
+* twres.sthlp
 * twest.ado
+* twest.sthlp
 * twsave.ado
+* twsave.sthlp
 * twload.ado
+* twload.sthlp
 * twfem.ado
+* twfem.sthlp
 * example.do
 
 
@@ -121,9 +127,9 @@ Download this repository and extract it. From the directory where this README.MD
 ### Manual Installation
 
 To install the commands without ssc install:
-``
-Download the commands and put them in PERSONAL or PLUS folder (to search where are this folders run "sysdir" in STATA)	
-``
+
+download the commands and put them in PERSONAL or PLUS folder (to search where are this folders run "sysdir" in STATA).	
+
 
 ### From SSC
 
