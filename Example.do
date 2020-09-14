@@ -1,5 +1,5 @@
 clear all
-do twowayreg.ado
+do twfem.ado
 
 *** 0) Preliminaries
 
@@ -56,32 +56,36 @@ forvalues var = 1/`vars' {
 	}
 
 *** 2) Run Our procedure
-twowayset hid tid
-twowaysample hid tid, gen(sample)
-projvar y x*, p(w_)
-reg w_y w_x* if sample==1, noc robust
-dofadj
-twowayreg w_y w_x* if sample==1, robust
+twset hid tid, nogen
+twres y x*,p(w_)
+twest w_y w_x* , robust
 
-drop w_*
+drop w_* 
 
-twowaysave hid tid
 }
 }
 }
 }
 
 save Example2.dta,replace 
+clear all
+do twfem.ado
+use Example2.dta
+twfem reg y x1-x3,absorb(hid tid) newv(w_) 
+twfem reg w_y w_x*, noproj newv(w_) vce(cluster hid)
 
+*** 2) Run Our procedure
+twset hid tid
+twres y x1, p(w_)
+twest reg w_y w_x1
+twres x2, p(w_)
+twest reg w_y w_x*,vce(robust)
+drop w_*
+
+
+***TEST
 clear all
 do twowayreg.ado
 use Example2.dta
-*** 2) Run Our procedure
-twowayload hid tid
-projvar y x*, p(w_)
-reg w_y w_x* if sample==1, noc robust
-dofadj_l
-twowayreg w_y w_x* if sample==1, robust
-
-drop w_*
-
+twfem sureg (y x1-x3) ,absorb(hid tid) newv(w_) 
+twfem reg w_y w_x*, noproj newv(w_) 

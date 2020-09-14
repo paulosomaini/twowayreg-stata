@@ -1,0 +1,10 @@
+
+# Ignore all
+*
+
+# Unignore those with the following extensions
+!*.do
+!*.ado
+!*.MD
+!*.sthlp
+!*.gitignore
