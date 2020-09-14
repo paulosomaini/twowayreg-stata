@@ -126,10 +126,7 @@ Download this repository and extract it. From the directory where this README.MD
 
 ### Manual Installation
 
-To install the commands without ssc install:
-
-download the commands and put them in PERSONAL or PLUS folder (to search where are this folders run "sysdir" in STATA).	
-
+To install the commands without ssc install; download the commands and put them in PERSONAL or PLUS folder (to search where are this folders run "sysdir" in STATA).	
 
 ### From SSC
 
