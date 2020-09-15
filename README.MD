@@ -44,7 +44,6 @@ The vce() option allows you to choose how to compute standard errors:
 ```
 .vce(robust): standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
 .vce(cluster hhid):standard errors  proposed by Arellano (1987) robust to heteroscedasticity and serial correlation. 
-.vce(cluster hhid) statadof:Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe
 .If vce() is omitted: standard errors assuming homoscedasticity and no within  group correlation or serial correlation.
 ```
 
