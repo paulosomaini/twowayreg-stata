@@ -24,19 +24,21 @@ This command runs the whole algorithm. The syntaxis is as follows:
 .command varlist(numeric ts fv) [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
 ```
 
-Command contains the type of regression. For example you could choose to run: reg, ivreg, sureg, etc. 
-The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original command. 
-Adding `using` followed by a path will save a set of matrices in that path. Otherwise, the matrices will be saved in `eresults`. STATA may fail if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
+Command is an estimation command. For example you could choose to run: reg, ivreg, sureg, etc. 
+The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original command.
+The code creates and store some matrices that can be used later. Adding `using` followed by a path will save a set of matrices in that path. Otherwise, the matrices will be saved in `eresults`. STATA may throw an error if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
 The two levels of fixed effects are specified in the `absorb` option. The absorb option takes at least two variables with group identifiers. The optional third input can be a variable of analytic weights. 
 If the group identifiers are not consecutive after dropping redundants and missing observations, then you have the option `generate()` to create new group identifiers.
 
 In the second list of options you choose how to store the residualized variables. 
 There are two options: 
 
-1. Create new variables The residualized variables will be stored as new variables that will be named with a prefix specified in `newvars'.
-2. Or replace variables with their residualized version.
+1. Create new variables: the residualized variables will be stored as new variables that will be named with a prefix specified in `newvars'.
+2. Replace variables with their residualized version.
 
-With NOPROJ you can run the regression without creating any arrays or projecting new variables.
+If you have already residualized all the variables that will be included in the specification, you may include them directly and add the option NOPROJ.
+This option assumes that all the included variables have been residualized. Residualizing the variables is the most time-consuming step. This option is useful
+to reuse variables that have been already residualized.
 
 The vce() option allows you to choose how to compute standard errors:
 ```
@@ -52,7 +54,7 @@ Examples:
 .twfem reg w_y w_x1, noproj vce(cluster hhid)
 .twfem ivregress 2sls w_y w_x1 (w_x2= w_x3), noproj vce(robust)
 ```
-The first line creates new variables that are the residualized variables. The second line uses the variables already projected to save time. The third line uses the variables already projected with a different command. 
+The first line stores the residualized variables as new variables using the prefix `w_`. The second line reuses these variables to save time. The third line uses them again with a different command. 
 
 ### Advanced
 
@@ -61,8 +63,9 @@ In these cases, one can save computation time by reusing some of the previous co
 The second and more advanced way to interact with the algorithm is to exploit this feature by using the functions  
 `twset` `twres` and `twest`.
 
-`twset` uses the group identifiers and weights to create a set of matrices that can be used for multiple specifications. You have the option to save these arrays adding `using` and a path. Otherwise, the matrices will be saved in `eresults`. STATA may fail if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
-If the group identifiers are not consecutive after dropping redundants and missing observations, then you have the option `generate()` to create new group identifiers.
+`twset` uses the group identifiers and weights to create a set of matrices that are used to residualize variables. You have the option to save these arrays adding `using` and a path. Otherwise, the matrices will be saved in `eresults`. STATA may throw an error if it tries to store a matrix that exceeds `matsize` in ereturn. Adding `using` avoids that limitation.
+If the group identifiers are not consecutive integers (after dropping redundants and missing observations), then you have the option `generate()` to create new group identifiers.
+The code may throw an error if the group identifiers are not consecutive integers and the option `generate()` is missing.
 
 Examples:
 ```
@@ -74,7 +77,7 @@ Examples:
 .twset hhid tid using "../folder/x"
 
 ```
-The first two lines assign each observation a weight of one (default. The second pair of lines assign to each observation the weight given by variable w. The last two lines save the arrays in "folder" with the prefix "x"
+The first two lines assign each observation a weight of one (default). The second pair of lines assign to each observation the weight given by variable w. The last two lines save the arrays in "folder" with the prefix "x"
 You can use if and in in this command. This is extremely important if there is a variable that has missing values.
 
 `twres` performs the second step of the algorithm. It is followed by a list of variables. These variables are projected onto the set of dummies, and the residual of this projection is saved as additional variables with a new prefix. Alternatively, you may choose to replace the existing variables. For example:
@@ -87,20 +90,20 @@ You can use if and in in this command. This is extremely important if there is a
 If you used `using` to save the matrices in `twset`, use the same path to recover them and use them in `twres`. Otherwise, `twres` will use the matrices stored in ereturn.
 If a missing value exist in one of the variables projected there will be an error indacating that the variable cannot be residualized.
 
-twest performs the last step of the algorithm, making the regression of the projected variables. Here you can select the type or regression and calculate the standard errors as in twfem. For example:
+twest performs the last step of the algorithm, making the regression of the projected variables. You can select the estimation command and the formula for the standard errors as in twfem. For example:
 ```
 .twest reg w_y w_x*, vce(cluster hhid)
 
 ```
 
-If you already run `twset` you can save the matrixes in a folder to not re-calculate them. 
-The comand `twsave` will complete this task and the command `twload` load the matrixes saved previously. Both of them can be followed by `using` to select the path where the matrixes will be saved. If using option is ommited the arrays will we stored in the current directory.
+If you already run `twset` you can save the matrices in a folder to not re-calculate them. 
+The comand `twsave` will complete this task and the command `twload` load the matrices saved previously. Both of them can be followed by `using` to select the path where the matrices will be saved. If using option is ommited the arrays will we stored in the current directory.
 ```
 .twsave using "../folder/x"
 ....
 .twload using "../folder/x"
 ```
-In this example the matrixes will be saved in "folder" with the prefix "x", then you can close STATA and use `twload` to load the arrays.
+In this example the matrices will be saved in "folder" with the prefix "x". Now you may close STATA, open it again, and use `twload` to load the arrays.
 
 ## What's in this repo?
 
@@ -122,7 +125,7 @@ In this example the matrixes will be saved in "folder" with the prefix "x", then
 ## Set up and Installation
 
 ### One-time use
-Download this repository and extract it. From the directory where this README.MD file is located type ` do twest.ado` in the R console.
+Download this repository and extract it. From the directory where this README.MD file is located type ` do twest.ado` in the STATA console.
 
 ### Manual Installation
 
