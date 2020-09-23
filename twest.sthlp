@@ -1,8 +1,5 @@
 {smcl}
 {* *! version 1.0  6 Sep 2020}{...}
-{vieweralsosee "" "--"}{...}
-{vieweralsosee "Install command2" "ssc install command2"}{...}
-{vieweralsosee "Help command2 (if installed)" "help command2"}{...}
 {viewerjumpto "Syntax" "twest##syntax"}{...}
 {viewerjumpto "Description" "twest##description"}{...}
 {viewerjumpto "Options" "twest##options"}{...}
@@ -20,7 +17,7 @@
 {it:options}]
 
 {pstd}
-Command is an estimation command, e.g., regress, ivregress, sureg. The varlist contains the dependent followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original estimation command. {p_end}
+Command is an estimation command, e.g., regress, ivregress, sureg. The varlist contains the dependent variable followed by the independent variables. The syntaxis of the varlist replicates the syntaxis of the original estimation command. {p_end}
 
 
 {synoptset 20 tabbed}{...}
@@ -50,8 +47,8 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 {p2col 8 12 12 2: 1.} Factor-variable and time-series operators not allowed.{p_end}
 
 {title:Common Errors}
-{p2col 8 12 12 2: 1.}If using option is omitted: it will an error if the user runs twres and then another command since projvar needs the eresults from twres.{p_end}
-{p2col 8 12 12 2: 2.} It will be an error if the use tries to use vce option will "sureg" command.{p_end}
+{p2col 8 12 12 2: 1.} Running twres after some other comment erased or overwrote eresults. {p_end}
+{p2col 8 12 12 2: 2.} Using the vce with the "sureg" command.{p_end}
 
 {marker examples}{...}
 {title:Examples}
@@ -61,7 +58,7 @@ may be {opt un:adjusted} (default), {opt robust} or {opt cluster} {clustervar}{p
 
 {title:Stored results}
 {pstd}
-{it:Note: In ereturn will be all the eresults of the original command selected plus the matrices and scalars needed for the algorithm.} 
+{it:Note: All the results of the original command selected and the matrices and scalars needed for the algorithm will be stored in eresults. Use ereturn to list them.} 
 
 {synoptset 15 tabbed}{...}
 {syntab:Scalars}
@@ -117,7 +114,7 @@ For advanced options:
 
 {title:References}
 {phang}
-Somaini, P. and F.A. Wolak, (2016), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
+Somaini, P. and F.A. Wolak, (2015), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
 
 {title: Aditional References}
 {phang}

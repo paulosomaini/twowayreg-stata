@@ -1,8 +1,5 @@
 {smcl}
 {* *! version 1.0  6 Sep 2020}{...}
-{vieweralsosee "" "--"}{...}
-{vieweralsosee "Install command2" "ssc install command2"}{...}
-{vieweralsosee "Help command2 (if installed)" "help command2"}{...}
 {viewerjumpto "Syntax" "twest##syntax"}{...}
 {viewerjumpto "Description" "twest##description"}{...}
 {viewerjumpto "Options" "twest##options"}{...}
@@ -31,10 +28,10 @@
 {marker description}{...}
 {title:Description}
 {pstd}
-{cmd:twsave} save the matrices created with twset and stored in eresults. With twload and this command the user will no have to recalculate the matrices. {p_end}
+{cmd:twsave} save the matrices created with twset and stored in eresults. wsave and twload are used to save and load the results of twset which is the step that is more computationally demanding. {p_end}
 
 {title:Common Errors}
-{p2col 8 12 12 2: 1.} This command only work if "twset" has been ran previously and the e() has not been re-written. 
+{p2col 8 12 12 2: 1.} This command only work after running "twset" and before the eresults are over-written. 
 
 {marker examples}{...}
 {title:Examples}
@@ -57,7 +54,7 @@ For more information of {it:twsave} {browse "https://github.com/paulosomaini/two
 
 {title:References}
 {phang}
-Somaini, P. and F.A. Wolak, (2016), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
+Somaini, P. and F.A. Wolak, (2015), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
 
 {title: Aditional References}
 {phang}

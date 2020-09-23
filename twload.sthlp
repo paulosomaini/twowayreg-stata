@@ -1,8 +1,5 @@
 {smcl}
 {* *! version 1.0  6 Sep 2020}{...}
-{vieweralsosee "" "--"}{...}
-{vieweralsosee "Install command2" "ssc install command2"}{...}
-{vieweralsosee "Help command2 (if installed)" "help command2"}{...}
 {viewerjumpto "Syntax" "twest##syntax"}{...}
 {viewerjumpto "Description" "twest##description"}{...}
 {viewerjumpto "Options" "twest##options"}{...}
@@ -10,7 +7,7 @@
 {viewerjumpto "Examples" "twest##examples"}{...}
 {title:Title}
 {phang}
-{bf:twsave} {hline 2} load the matrices saved with twload.
+{bf:twsave} {hline 2} load the matrices saved with twsave.
 
 {marker syntax}{...}
 {title:Syntax}
@@ -22,7 +19,7 @@
 {synoptset 20 tabbed}{...}
 {synopthdr}
 {synoptline}
-{synopt:{opt {help using}}} followed by a path will load the set of matrices that has been saved in that path. If using option is omitted command will search for matrices in the current directory. {p_end}
+{synopt:{opt {help using}}} followed by a path will load the set of matrices that has been saved in that path. If using option is omitted, the command will search for matrices in the current directory. {p_end}
 
 {synoptline}
 {p2colreset}{...}
@@ -31,11 +28,11 @@
 {marker description}{...}
 {title:Description}
 {pstd}
-{cmd:twload} load the matrices saved with twsave. With this command and twosave, the user will no have to recalculate the matrices. {p_end}
+{cmd:twload} load the matrices saved with twsave. twsave and twload are used to save and load the results of twset which is the step that is more computationally demanding. {p_end}
 
 
 {title:Common Errors}
-{p2col 8 12 12 2: 1.} This command will work only if there are matrices saved in a folder. 
+{p2col 8 12 12 2: 1.} This command will work only if there are matrices saved in the path folder. 
 
 {marker examples}{...}
 {title:Examples}
@@ -62,7 +59,7 @@ For more information of {it:twload} {browse "https://github.com/paulosomaini/two
 
 {title:References}
 {phang}
-Somaini, P. and F.A. Wolak, (2016), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
+Somaini, P. and F.A. Wolak, (2015), An Algorithm to Estimate the Two-Way Fixed Effects Model, Journal of Econometric Methods, 5, issue 1, p. 143-152.
 
 {title: Aditional References}
 {phang}
