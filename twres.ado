@@ -1,99 +1,11 @@
-capture program drop twres 
-capture mata mata drop sparse()
-capture mata mata drop excludemissing()
-capture mata mata drop proddiag()
-capture mata mata drop diagprod()
-capture mata mata drop diagminus()
+capture program drop twres
 capture mata mata drop projVar()
-capture mata mata drop saveMat()
-capture mata mata drop readMat()
-
-//Mata programs:
 
 
-mata:
-real matrix sparse(real matrix x)
- {
-  real matrix y
-  real scalar k
- 
-  y = J(colmax(x[,1]),colmax(x[,2]),0) 
-  for (k=1; k<=rows(x); k++) {
-    y[x[k,1],x[k,2]] = y[x[k,1],x[k,2]] + x[k,3]
-  }
- 
-  return(y)
- }
- 
-  //sparse matrix function ends
-  
+findfile twset.ado
+include "`r(fn)'"
 
- // multiplying a diagonal matrix represented by a vector times a matrix.
- // Diag*A multiplies each rows.
- real matrix diagprod(real colvector x, real matrix A)
- {
-  real matrix y
-  real scalar k
-  if(rows(x)<cols(x)) x = x'
- 
-  y = J(rows(A),cols(A),0)
-  for (k=1; k<=rows(x); k++) {
-    y[k,] = A[k,] * x[k,1]
-  }
- 
-  return(y)
- }
- 
-   matrix readMat(string s,string n)
- {
-  matrix X
-  real scalar fh
-fh = fopen(s+"_"+n, "r")
-X = fgetmatrix(fh)
-fclose(fh)
-return(X)
- }
- 
- 
-  
- void saveMat(string s,string n,matrix X)
- {
-  real scalar fh
-fh = fopen(s + "_" + n, "rw")
-fputmatrix(fh, X)
-fclose(fh)
- }
- 
- 
-  real matrix proddiag(real matrix A,real colvector x)
- {
-  real matrix y
-  real scalar k
-  if(rows(x)<cols(x)) x = x'
- 
-  y = J(rows(A),cols(A),0)
-  for (k=1; k<=rows(x); k++) {
-    y[,k] = A[,k] * x[k,1]
-  }
- 
-  return(y)
- }
- 
-   real matrix diagminus(real colvector x,real matrix A)
- {
-  //real matrix y
-  real scalar k
-  if(rows(x)<cols(x)) x = x'
- 
-  //y = -A
-  for (k=1; k<=rows(x); k++) {
-    A[k,k] = A[k,k] - x[k,1]
-  }
- 
-  return(-A)
- }
- 
-
+mata
 void projVar()
 {
 	real matrix V, varIn, D,aux,delta,tau,varOut,A,B,CinvHHDH,AinvDDDH,C
@@ -110,6 +22,7 @@ void projVar()
 	w=st_local("w")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
+
 	V = st_data(.,(var1, var2,currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -130,15 +43,17 @@ void projVar()
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
 	correction_rank=st_numscalar("e(rank_adj)")
+
 	//load the matrices from eresults
 	if (save_to_e>0){
-		
+
 		B=st_matrix("e(B)")
 	}
 	else{
 		//load the matrices from using option
 		N=readMat(root,"twoWayN1")
 		T=readMat(root,"twoWayN2")
+		correction_rank=readMat(root,"twoWayCorrection")
 		B=readMat(root,"twoWayB")
 	}
 
@@ -177,9 +92,8 @@ void projVar()
 	st_store(st_data(.,linear_index,sampleVarName), newvar, varOut)
 
 }
+end
 
- end
- 
 
 
 program define twres, nclass
@@ -231,10 +145,9 @@ foreach currvar of varlist `varlist'{
 	*check if e() has not been rewritten
 	capt confirm scalar e(dimN)
 	if _rc { 
-	   di "{err} The e() has been rewritten, please run twset again."
-	   exit
+			di "{err} The e() has been rewritten, please run twset again."
+			exit
 	}
-	
 	*check that there is using in the command or not.
 	capt assert inlist( "`using/'", "")
 	if !_rc {    

@@ -142,6 +142,7 @@ else
 {
 	saveMat(root,"twoWayN1", N)
 	saveMat(root,"twoWayN2", T)
+	saveMat(root,"twoWayCorrection",correction_rank)
 	saveMat(root,"twoWayinvDD", invDD)
 	saveMat(root,"twoWayinvHH", invHH)
 }

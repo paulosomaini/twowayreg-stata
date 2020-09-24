@@ -4,7 +4,7 @@ capture program drop twest
 program define twest, eclass sortpreserve
     version 11
  
-    syntax anything,  [,VCE(namelist) statadof] 
+    syntax anything,  [,VCE(namelist)] 
 	local absorb = "`e(absorb)'"
 
 	qui{
@@ -87,27 +87,15 @@ if ("`clustvar'"!=""){
 }	
 	
 if ("`e(k_eq)'"==""){
-    if ("`statadof'"== ""){
 	*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
    qui{
 	scalar df_r= e(N)-e(df_m)-1
 	scalar df_r1= e(df_r)
 	scalar vadj = df_r/(df_r- dimN - dimT+rank_adj+nested_adj)
 	    }
- }
-
-  else if ("`statadof'"== "statadof"){
-	*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
-   qui{
-	scalar N=e(N)
-	scalar df_m= e(df_m)
-	scalar df_r= e(N)-e(df_m)-1
-	scalar df_r1= e(df_r)
-	scalar vadj = (N-1)*(df_r/(df_r - 1))/(N - df_m - 1)
-	    }
-
  
-}
+
+
 	matrix b1=e(b)
 	matrix V1 = vadj*e(V)
 	eret repost b=b1 V=V1, esample(`touse_reg')
@@ -121,24 +109,13 @@ foreach x of local anything{
 	if strpos("`x'" ,"("){
 		foreach parns in x{
 			local num= `num' + 1
-			if ("`statadof'"== ""){
 			*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
 		   qui{
 			scalar df_r`num'= e(N)-e(df_m`num')-1
 			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj+nested_adj)
 				}
-		 }
-
-		  else if ("`statadof'"== "statadof"){
-			*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
-		   qui{
-			scalar N=e(N)
-			scalar df_m`num'= e(df_m`num')
-			scalar df_r`num'= e(N)-e(df_m`num')-1
-			scalar vadj`num' = (N-1)*(df_r`num'/(df_r`num' - 1))/(N - df_m`num' - 1)
-				}
 		 
-		}
+
 			matrix b1=e(b)
 			local num_1= `num'-1
 			local param= e(df_m`num')

@@ -144,6 +144,7 @@ else
 {
 	saveMat(root,"twoWayN1", N)
 	saveMat(root,"twoWayN2", T)
+	saveMat(root,"twoWayCorrection",correction_rank)
 	saveMat(root,"twoWayinvDD", invDD)
 	saveMat(root,"twoWayinvHH", invHH)
 }
@@ -301,7 +302,6 @@ else{
 
 end
 
-
 capture program drop twres
 capture mata mata drop projVar()
 
@@ -323,6 +323,7 @@ void projVar()
 	w=st_local("w")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
+
 	V = st_data(.,(var1, var2,currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -343,15 +344,17 @@ void projVar()
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
 	correction_rank=st_numscalar("e(rank_adj)")
+
 	//load the matrices from eresults
 	if (save_to_e>0){
-		
+
 		B=st_matrix("e(B)")
 	}
 	else{
 		//load the matrices from using option
 		N=readMat(root,"twoWayN1")
 		T=readMat(root,"twoWayN2")
+		correction_rank=readMat(root,"twoWayCorrection")
 		B=readMat(root,"twoWayB")
 	}
 
@@ -443,10 +446,9 @@ foreach currvar of varlist `varlist'{
 	*check if e() has not been rewritten
 	capt confirm scalar e(dimN)
 	if _rc { 
-	   di "{err} The e() has been rewritten, please run twset again."
-	   exit
+			di "{err} The e() has been rewritten, please run twset again."
+			exit
 	}
-	
 	*check that there is using in the command or not.
 	capt assert inlist( "`using/'", "")
 	if !_rc {    
@@ -689,6 +691,7 @@ gettoken twoway_w: w
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
+	markout `touse_set' `twoway_id' `twoway_t' `twoway_w'
 	*Discard the observations with negative weights
 	if !("`twoway_w'"==""){
 	replace `twoway_w' = . if `twoway_w'<=0
@@ -743,7 +746,7 @@ capture program drop twest
 program define twest, eclass sortpreserve
     version 11
  
-    syntax anything,  [,VCE(namelist) statadof] 
+    syntax anything,  [,VCE(namelist)] 
 	local absorb = "`e(absorb)'"
 
 	qui{
@@ -826,27 +829,14 @@ if ("`clustvar'"!=""){
 }	
 	
 if ("`e(k_eq)'"==""){
-    if ("`statadof'"== ""){
-	*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
+	
    qui{
 	scalar df_r= e(N)-e(df_m)-1
 	scalar df_r1= e(df_r)
 	scalar vadj = df_r/(df_r- dimN - dimT+rank_adj+nested_adj)
 	    }
- }
 
-  else if ("`statadof'"== "statadof"){
-	*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
-   qui{
-	scalar N=e(N)
-	scalar df_m= e(df_m)
-	scalar df_r= e(N)-e(df_m)-1
-	scalar df_r1= e(df_r)
-	scalar vadj = (N-1)*(df_r/(df_r - 1))/(N - df_m - 1)
-	    }
 
- 
-}
 	matrix b1=e(b)
 	matrix V1 = vadj*e(V)
 	eret repost b=b1 V=V1, esample(`touse_reg')
@@ -860,24 +850,13 @@ foreach x of local anything{
 	if strpos("`x'" ,"("){
 		foreach parns in x{
 			local num= `num' + 1
-			if ("`statadof'"== ""){
-			*standard errors robust to heteroscedasticity but assumes no correlation within group or serial correlation.
-		   qui{
+
+			qui{
 			scalar df_r`num'= e(N)-e(df_m`num')-1
 			scalar vadj`num'= df_r`num'/(df_r`num'- dimN - dimT+rank_adj+nested_adj)
 				}
-		 }
-
-		  else if ("`statadof'"== "statadof"){
-			*Arellano standard errors with a degree of freedom correction performed by Stata xtreg, fe.
-		   qui{
-			scalar N=e(N)
-			scalar df_m`num'= e(df_m`num')
-			scalar df_r`num'= e(N)-e(df_m`num')-1
-			scalar vadj`num' = (N-1)*(df_r`num'/(df_r`num' - 1))/(N - df_m`num' - 1)
-				}
 		 
-		}
+
 			matrix b1=e(b)
 			local num_1= `num'-1
 			local param= e(df_m`num')
@@ -928,7 +907,7 @@ end
 
 program define twfem, eclass sortpreserve
 version 11
-syntax anything [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist) statadof]
+syntax anything [if] [in] , [, using(string) ABSorb(varlist min=2 max=3) GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
 local anything `anything'
 
 local anything= subinstr("`anything'","=", " = ",.) 
@@ -1006,7 +985,7 @@ local projvarlist : list uniq projvarlist
 				}
         else {
 			twres `projvarlist', p(`newvars')
-			twest `anythingout', vce(`vce') `statadof'
+			twest `anythingout', vce(`vce') 
 		  }
 				
 	}
@@ -1014,7 +993,7 @@ local projvarlist : list uniq projvarlist
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		twres `projvarlist', replace
-		twest `anything' , vce(`vce') `statadof'
+		twest `anything' , vce(`vce') 
 			
 	}
 	}
@@ -1029,13 +1008,13 @@ local projvarlist : list uniq projvarlist
 					}
 			else {
 				  	twres `projvarlist' using "`using'", p(`newvars')
-					twest `anythingout', vce(`vce') `statadof'
+					twest `anythingout', vce(`vce') 
 				  }
 					
 		}
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		     twres `projvarlist' using "`using'", replace
-			 twest `anything' , vce(`vce') `statadof'
+			 twest `anything' , vce(`vce') 
 			
 	}
 		
@@ -1056,7 +1035,7 @@ local projvarlist : list uniq projvarlist
 				}
         else {
 			twres `projvarlist', p(`newvars')
-			twest `anythingout', vce(`vce') `statadof'
+			twest `anythingout', vce(`vce') 
 			  }
 				
 	}
@@ -1064,8 +1043,7 @@ local projvarlist : list uniq projvarlist
 		
 	else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		twres `projvarlist', replace
-		twest `anything' , vce(`vce') `statadof'
-		
+		twest `anything' , vce(`vce') 		
 	}
 	}
 	else{
@@ -1079,7 +1057,7 @@ local projvarlist : list uniq projvarlist
 					}
 			else {
 					twres `projvarlist' using "`using'", p(`newvars')
-					twest `anythingout', vce(`vce') `statadof'
+					twest `anythingout', vce(`vce') 
 				}
 					
 		}
@@ -1087,7 +1065,7 @@ local projvarlist : list uniq projvarlist
 			
 		else if ("`NEWVars(`name')'"=="" & "`replace'"=="replace" ){
 		     twres `projvarlist' using "`using'", replace
-			 twest `anything' , vce(`vce') `statadof'
+			 twest `anything' , vce(`vce') 
 			
 	}
 		
@@ -1096,7 +1074,7 @@ local projvarlist : list uniq projvarlist
 }
 else if ("`noproj'"=="noproj"){
 	*option just to make the regression without setting the fixed effects or projecting varlist
-	twest `anything', vce(`vce') `statadof'
+	twest `anything', vce(`vce') 
 }
 
 
