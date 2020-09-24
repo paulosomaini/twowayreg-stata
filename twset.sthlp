@@ -1,8 +1,11 @@
 {smcl}
 {* *! version 1.0  6 Sep 2020}{...}
 {vieweralsosee "" "--"}{...}
-{vieweralsosee "Install command2" "ssc install command2"}{...}
-{vieweralsosee "Help command2 (if installed)" "help command2"}{...}
+{vieweralsosee "twres" "help twres"}{...}
+{vieweralsosee "twest" "help twest"}{...}
+{vieweralsosee "twsave" "help twsave"}{...}
+{vieweralsosee "twload" "help twload"}{...}
+{vieweralsosee "twload" "help twfem"}{...}
 {viewerjumpto "Syntax" "twest##syntax"}{...}
 {viewerjumpto "Description" "twest##description"}{...}
 {viewerjumpto "Options" "twest##options"}{...}
@@ -15,13 +18,15 @@
 {marker syntax}{...}
 {title:Syntax}
 {p 8 17 2}
-{cmdab:twset} FixedEffects 
+{cmdab:twset} varlist 
 [{help weight}]
 [{help if}]
 [{help in}]
 [{help using}]
 [{cmd:,}
 {it:options}]
+
+
 
 {synoptset 20 tabbed}{...}
 {synopthdr}
@@ -31,7 +36,10 @@
 {synopt:{opt gen:erate(newvars)}} to create new group identifiers {p_end}
 
 {synoptline}
+    varlist contains the name of the two group identifiers.
 {p2colreset}{...}
+
+
 {p 4 6 2}
 
 {marker description}{...}
@@ -64,7 +72,7 @@
 {pstd}twset hhid tid using "../folder/x"  {p_end}
 
 {title:Shortcomings}
-{p2col 8 12 12 2: 1.} In this command the user has to use the if and in option to discard observations with missing values in the variables included in the specification.{p_end}
+{p2col 8 12 12 2: 1.} Use the if and in options to exclude observations with missing values in the variables included in the specification.{p_end}
 
 {title:Common Errors}
 {p2col 8 12 12 2: 1.} The algorithm will not work if the fixed effects after removing redundant and missing observations are not consecutives and the {opth gen:erate}  option is not used. {p_end}
@@ -117,7 +125,6 @@ For more information of {it:twset} {browse "https://github.com/paulosomaini/twow
 {help twsave}
 {help twload}
 {help twfem}
-
 
 {title:References}
 {phang}
