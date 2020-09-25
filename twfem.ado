@@ -144,6 +144,7 @@ else
 {
 	saveMat(root,"twoWayN1", N)
 	saveMat(root,"twoWayN2", T)
+	saveMat(root,"twoWayCorrection",correction_rank)
 	saveMat(root,"twoWayinvDD", invDD)
 	saveMat(root,"twoWayinvHH", invHH)
 }
@@ -301,7 +302,6 @@ else{
 
 end
 
-
 capture program drop twres
 capture mata mata drop projVar()
 
@@ -323,6 +323,7 @@ void projVar()
 	w=st_local("w")
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
+
 	V = st_data(.,(var1, var2,currvar),sampleVarName)
 	varIn=V[.,3]
 	
@@ -343,15 +344,17 @@ void projVar()
 	N=st_numscalar("e(dimN)")
 	T=st_numscalar("e(dimT)")
 	correction_rank=st_numscalar("e(rank_adj)")
+
 	//load the matrices from eresults
 	if (save_to_e>0){
-		
+
 		B=st_matrix("e(B)")
 	}
 	else{
 		//load the matrices from using option
 		N=readMat(root,"twoWayN1")
 		T=readMat(root,"twoWayN2")
+		correction_rank=readMat(root,"twoWayCorrection")
 		B=readMat(root,"twoWayB")
 	}
 
@@ -443,10 +446,9 @@ foreach currvar of varlist `varlist'{
 	*check if e() has not been rewritten
 	capt confirm scalar e(dimN)
 	if _rc { 
-	   di "{err} The e() has been rewritten, please run twset again."
-	   exit
+			di "{err} The e() has been rewritten, please run twset again."
+			exit
 	}
-	
 	*check that there is using in the command or not.
 	capt assert inlist( "`using/'", "")
 	if !_rc {    
@@ -689,6 +691,7 @@ gettoken twoway_w: w
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
+	markout `touse_set' `twoway_id' `twoway_t' `twoway_w'
 	*Discard the observations with negative weights
 	if !("`twoway_w'"==""){
 	replace `twoway_w' = . if `twoway_w'<=0

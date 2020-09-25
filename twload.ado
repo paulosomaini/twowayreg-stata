@@ -1,7 +1,7 @@
 capture program drop twload
 capture mata mata drop mataload()
 
-findfile twset 
+findfile twset.ado
 include "`r(fn)'"
 
 mata
@@ -70,6 +70,7 @@ gettoken twoway_w: w
 	qui{
 	tempvar touse_set
 	mark `touse_set' `if' `in'
+	markout `touse_set' `twoway_id' `twoway_t' `twoway_w'
 	*Discard the observations with negative weights
 	if !("`twoway_w'"==""){
 	replace `twoway_w' = . if `twoway_w'<=0
