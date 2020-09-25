@@ -152,23 +152,6 @@ foreach currvar of varlist `varlist'{
 	capt assert inlist( "`using/'", "")
 	if !_rc {    
 		scalar save_to_e=1
-			*save in scalars and arrays the macros.
-			scalar dimN= e(dimN)
-			scalar dimT= e(dimT)
-			scalar rank_adj=e(rank_adj)
-			matrix invDD=e(invDD)
-			matrix invHH=e(invHH)
-			if (dimN<dimT){
-				matrix CinvHHDH=e(CinvHHDH)
-				matrix A= e(A)
-				matrix B=e(B)
-				}
-			else{
-				matrix AinvDDDH=e(AinvDDDH)
-				matrix C= e(C)
-				matrix B=e(B)
-				}
-		
 		}
 	else{
 		scalar save_to_e=0
