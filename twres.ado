@@ -1,9 +1,23 @@
 capture program drop twres
 capture mata mata drop projVar()
-
+capture mata mata drop microMataLoad()
 
 findfile twset.ado
 include "`r(fn)'"
+
+mata 
+void microMataLoad()
+{
+	string scalar newid,newt, w, root
+	root =st_local("using")
+	w = readMat(root,"twoWayW")
+	var1= readMat(root,"twoWayVar1")
+	var2= readMat(root,"twoWayVar2")
+	st_local("var1",var1)
+	st_local("var2",var2)
+	st_local("w",w)
+}
+end
 
 mata
 void projVar()
@@ -18,8 +32,8 @@ void projVar()
 	newvar = st_local("newvar")
 	var1 = st_local("var1")
 	var2 = st_local("var2")
-	
 	w=st_local("w")
+
 	sampleVarName = st_local("touse_proj")
 	linear_index = st_local("linear_index")
 
@@ -33,20 +47,19 @@ void projVar()
 	else {
 	D = st_data(.,(var1, var2,w),sampleVarName)
 	}
-	
+		
 	V[.,3]=V[.,3]:*D[.,3]
 	aux=sparse(V)
 	Dy=rowsum(aux)
 	Dy=Dy
 	Ty=colsum(aux)
 	Ty=Ty[1,1..cols(aux)-1]'
-	N=st_numscalar("e(dimN)")
-	T=st_numscalar("e(dimT)")
-	correction_rank=st_numscalar("e(rank_adj)")
 
 	//load the matrices from eresults
 	if (save_to_e>0){
-
+		N=st_numscalar("e(dimN)")
+		T=st_numscalar("e(dimT)")
+		correction_rank=st_numscalar("e(rank_adj)")
 		B=st_matrix("e(B)")
 	}
 	else{
@@ -55,6 +68,10 @@ void projVar()
 		T=readMat(root,"twoWayN2")
 		correction_rank=readMat(root,"twoWayCorrection")
 		B=readMat(root,"twoWayB")
+		st_numscalar("e(dimN)",N)
+		st_numscalar("e(dimT)",T)
+		st_numscalar("e(rank_adj)",correction_rank)
+		
 	}
 
 	 if (N<T)
@@ -96,7 +113,7 @@ end
 
 
 
-program define twres, nclass
+program define twres, eclass
 version 11
 syntax varlist [using/], [Prefix(name)] [REPLACE]
 
@@ -123,7 +140,6 @@ foreach currvar of varlist `varlist'{
     _fv_check_depvar `depvar'
     fvexpand `indepvars' 
 	
-	
 	qui{
 		
 	tempvar touse_proj touse_check linear_index
@@ -141,21 +157,50 @@ foreach currvar of varlist `varlist'{
 	   exit `rc'
 	}
 	drop `touse_check'
+
 	
-	*check if e() has not been rewritten
-	capt confirm scalar e(dimN)
-	if _rc { 
-			di "{err} The e() has been rewritten, please run twset again."
-			exit
-	}
 	*check that there is using in the command or not.
 	capt assert inlist( "`using/'", "")
-	if !_rc {    
-		scalar save_to_e=1
-		}
+	if !_rc { 
+			*check if e() has not been rewritten
+			capt confirm scalar e(dimN)
+			if _rc { 
+				di "{err} The e() has been rewritten, please run twset again."
+				exit
+			}
+			scalar save_to_e=1
+			}
 	else{
 		scalar save_to_e=0
+		mata microMataLoad()
+		gettoken twoway_id: var1
+		gettoken twoway_t: var2
+		gettoken twoway_w: w
+
+		qui{
+			tempvar touse_proj touse_proj2 touse_proj3
+			mark `touse_proj2' `if' `in'
+			markout `touse_proj2' `twoway_id' `twoway_t' `twoway_w'	
+			*Discard the observations with negative weights
+			if !("`twoway_w'"==""){
+				replace `twoway_w' = . if `twoway_w'<=0
+				replace `touse_proj2' = 0 if `twoway_w' == .
+				}
+
+			tempvar touse_set2
+			nonredundants `twoway_id' `twoway_t' if `touse_proj2', gen(`touse_proj')
+			}
+		  gen `touse_proj3'=`touse_proj2'
+		  ereturn post, esample(`touse_proj3')
+		  ereturn local absorb "`var1' `var2' `twoway_w'"
+		  ereturn scalar dimN= e(dimN)
+		  ereturn scalar dimT= e(dimT)
+		  ereturn scalar rank_adj=e(rank_adj)
+
 		}
+
+	
+
 	*variable created to store only the observations that are non-missings and in that way the arrays are conformables
 	gen `linear_index' = _n	
 	

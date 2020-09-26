@@ -140,9 +140,11 @@ if (save_to_e>0){
 //save the scalars and matrices the current directory or in the path selected
 else
 {
+	saveMat(root,"twoWayVar1", newid)
+	saveMat(root,"twoWayVar2", newt)
+	saveMat(root,"twoWayW",w)
 	saveMat(root,"twoWayN1", N)
 	saveMat(root,"twoWayN2", T)
-	saveMat(root,"twoWayCorrection",correction_rank)
 	saveMat(root,"twoWayinvDD", invDD)
 	saveMat(root,"twoWayinvHH", invHH)
 }
@@ -152,7 +154,7 @@ if (N<T)
         
         CinvHHDH=diagprod(invHH,DH')
 		A=invsym(diagminus(DD,CinvHHDH'*DH'))
-		corection_rank= N-rank(A)
+		correction_rank= N-rank(A)
         B=-A*CinvHHDH'
 		//save the matrices in eresults
 		if (save_to_e>0){
@@ -165,6 +167,9 @@ if (N<T)
 			saveMat(root,"twoWayCinvHHDH", CinvHHDH)
 			saveMat(root,"twoWayA", A)
 			saveMat(root,"twoWayB", B)
+			saveMat(root,"twoWayCorrection",correction_rank)
+
+
 		}		
 			
 		
@@ -173,7 +178,7 @@ if (N<T)
 	{
         AinvDDDH=diagprod(invDD,DH)
 		C=invsym((diagminus(HH,AinvDDDH'*DH)))
-		corection_rank= T-rank(C)
+		correction_rank= T-rank(C)
         B=-AinvDDDH*C
 
 		//save the matrices in eresults
@@ -188,13 +193,17 @@ if (N<T)
 			saveMat(root,"twoWayAinvDDDH", AinvDDDH)
 			saveMat(root,"twoWayC", C)
 			saveMat(root,"twoWayB", B)
+			saveMat(root,"twoWayCorrection",correction_rank)
+
+
 		}		
 			
 
 		
     }
 //save the scalar in eresults	
-st_numscalar("e(rank_adj)",corection_rank)
+	st_numscalar("e(rank_adj)",correction_rank)
+
  }
  
  end
