@@ -265,23 +265,11 @@ gettoken twoway_t twoway_w: aux
 	*if generate option is omitted there is no creation of extra fixed effects consecutives
 	capt assert inlist( "`generate'", "")
 	if !_rc { 
-		sort `twoway_id' `twoway_t'
-		qui{
-			tempvar check1
-			gen `check1'=`twoway_id'[_n]-`twoway_id'[_n-1]
-			replace `check1'=1 if _n==1
-			capture assert `check1'<=1 
-			local rc = _rc
-		}
-		if `rc'{
-			di "{err} The fixed effects indices are not consecutive integers. Please, use the option gen to generate consecutive variables." 
-			exit `rc'
-		}
-		
+		di "{err} Warning in twfem/twset: generate option not detected. The program may be slower or crash if fixed effects indices are not consecutive integers." 
 		tempvar var1 var2
 		local var1  "`twoway_id'"
 		local var2  "`twoway_t'"
-	}
+	} 
 	else{
 		*if the fixed effects are not consecutive the user has to create new variables to be used to create D matrix
 		qui{

@@ -10,19 +10,12 @@ void mataload()
 real matrix D, CinvHHDH, AinvDDDH, A, B, C
 real colvector  invDD, invHH
 real scalar N, T, correction_rank
-string scalar newid,newt, w,sampleVarName, root
-
+string scalar sampleVarName, root
 root =st_local("using")
-w = readMat(root,"twoWayW")
-newid= readMat(root,"twoWayVar1")
-newt= readMat(root,"twoWayVar2")
-
-st_local("newid",newid)
-st_local("newt",newt)
-st_local("w",w)
 
 N=readMat(root,"twoWayN1")
 T=readMat(root,"twoWayN2")
+
 correction_rank=readMat(root,"twoWayCorrection")
 invDD=readMat(root,"twoWayInvDD")
 invHH=readMat(root,"twoWayInvHH")
@@ -53,7 +46,6 @@ st_matrix("e(invHH)",invHH)
 		
     }
 
-
 }
 
 end
@@ -63,9 +55,10 @@ program define twload, eclass
 version 11
 syntax [using/] [if] [in]
 mata mataload()
+mata microMataLoad()
 *tokenize the names of the fixed effects
-gettoken twoway_id: newid
-gettoken twoway_t: newt
+gettoken twoway_id: var1
+gettoken twoway_t: var2
 gettoken twoway_w: w
 	qui{
 	tempvar touse_set
@@ -98,7 +91,7 @@ else {
 	matrix B=e(B)
 }
 ereturn post, esample(`touse_set2')
-ereturn local absorb "`newid' `newt' `w'"
+ereturn local absorb "`var1' `var2' `w'"
 *store the arrays and scalars in e()
 ereturn scalar dimN= dimN
 ereturn scalar dimT= dimT
