@@ -29,7 +29,7 @@ foreach x of local anything {
 			local isvarlist = 1
 		}
 
-	if strpos("`x'" ,"*") | strpos("`x'","?"){
+	if strpos("`x'" ,"*") | strpos("`x'","?") | strpos("`x'",".") {
 		local isvarlist = 1 
 	} 
 	
