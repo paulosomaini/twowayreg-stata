@@ -115,10 +115,21 @@ end
 
 program define twres, eclass
 version 11
-syntax varlist [using/], [Prefix(name)] [REPLACE]
+syntax anything [using/], [Prefix(name)] [REPLACE]
 
+local varlist `anything'
+foreach x of local anything {
+	if strpos("`x'","."){
+		capt assert inlist( "`.'", "")
+		local rc = !_rc
+		if !_rc {
+			di "{err} factor-variable and time-series operators not allowed, create the variables and then re-run the command"
+				exit !_rc
+			}
+	}
+}
 
-foreach currvar of varlist `varlist'{ 
+foreach currvar of  local varlist{ 
 	if ("`replace'"=="") {
 		capture confirm variable `prefix'`currvar'
 		local rc = !_rc
@@ -128,7 +139,8 @@ foreach currvar of varlist `varlist'{
 			}
 		}
 }
-	
+
+
 	*in e(absorb) there is the fixed effects that we use to generate the new matrix V
 	local absorb = "`e(absorb)'"
 	gettoken var1 aux : absorb
@@ -205,7 +217,7 @@ foreach currvar of varlist `varlist'{
 	gen `linear_index' = _n	
 	
 	*we create the new variables, if a variable already exists then it is ignored and not projected
-	foreach currvar of varlist `varlist' {
+	foreach currvar of local varlist {
 		local newvar="`prefix'`currvar'"
 		if ("`replace'" != "") {
 		local newvar="`currvar'"

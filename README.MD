@@ -21,7 +21,7 @@ There are two ways you can interface with the algorithm.
 The most basic way is using the command `twfem` to run ordinary least squares. 
 This command runs the whole algorithm. The syntaxis is as follows:
 ```
-.command varlist(numeric ts fv) [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
+.command varlist [if] [in] [using/], ABSorb(varlist min=2 max=3) [GENerate(namelist) NOPROJ] [, NEWVars(name) REPLACE] [, VCE(namelist)]
 ```
 
 Command is an estimation keyword(s), e.g., reg, ivreg gmm, sureg, etc. 
