@@ -115,9 +115,11 @@ end
 
 program define twres, eclass
 version 11
-syntax anything [using/], [Prefix(name)] [REPLACE]
+syntax varlist(numeric ts fv) [using/], [Prefix(name)] [REPLACE]
 
-local varlist `anything'
+local varlist `varlist'
+local anything `varlist'
+
 foreach x of local anything {
 	if strpos("`x'","."){
 		capt assert inlist( "`.'", "")
