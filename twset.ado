@@ -99,7 +99,7 @@ fclose(fh)
 {
 real matrix D, DH1, DH, CinvHHDH, AinvDDDH, A, B, C
 real colvector DD, HH, invDD, invHH
-real scalar N, T, save_to_e,corection_rank 
+real scalar N, T, save_to_e,correction_rank 
 string scalar newid,newt,w,sampleVarName, root
 D=.
 root=st_local("using")
@@ -161,6 +161,8 @@ if (N<T)
 			st_matrix("e(CinvHHDH)",CinvHHDH)
 			st_matrix("e(A)",A)
 			st_matrix("e(B)",B)
+			st_numscalar("e(rank_adj)",correction_rank)
+
 		}
 		//save the matrices the current directory or in the path selected
 		else{
@@ -186,6 +188,8 @@ if (N<T)
 			st_matrix("e(AinvDDDH)",AinvDDDH)
 			st_matrix("e(C)",C)
 			st_matrix("e(B)",B)
+			st_numscalar("e(rank_adj)",correction_rank)
+
 		}
 		
 		//save the matrices the current directory or in the path selected		

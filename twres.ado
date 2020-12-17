@@ -226,7 +226,7 @@ foreach currvar of  local varlist{
 		mata projVar()
 		}
 		else {
-			  capture confirm variable `prefix'`currvar'
+			  capture confirm variable `prefix'`currvar', exact
 			  if !_rc { 
 				}
 			else{
