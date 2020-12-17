@@ -128,7 +128,11 @@ In this example the matrices will be saved in "folder" with the prefix "x". Now 
 ## Set up and Installation
 
 ### One-time use
-Download this repository and extract it. From the directory where this README.MD file is located type ` do twest.ado` in the STATA console.
+Download this repository and extract it. From the directory where this README.MD file is located type ` do twfem.ado` in the STATA console.
+
+Important note: every time that `clear` or `mata clear` is run (this could happen if another function that uses mata such as `reghdfe` is executed) is necessary type ` do twfem.ado` again to re-use the code. 
+
+It is recomended to install the command as is explained below.
 
 ### Manual Installation
 
