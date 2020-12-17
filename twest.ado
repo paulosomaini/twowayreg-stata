@@ -1,6 +1,7 @@
 capture program drop twest 
+findfile twres.ado
 
-
+include "`r(fn)'"
 program define twest, eclass sortpreserve
     version 11
  

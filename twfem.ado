@@ -2,6 +2,8 @@
 capture program drop twfem
 
 findfile twload.ado
+findfile twest.ado
+
 include "`r(fn)'"
 
 program define twfem, eclass sortpreserve
